@@ -1,0 +1,83 @@
+{
+  "_comment": "Intent definitions. 'examples' are the training utterances for the intent classifier (kept separate from the evaluation test set). 'keywords' are high-precision trigger words (after NLP normalisation) that boost an intent's score.",
+  "intents": {
+    "greeting": {
+      "examples": ["hi", "hello", "hey there", "good morning", "good evening", "hello bot", "hi, anyone there?", "namaste"],
+      "keywords": ["hi", "hello", "hey", "morning", "evening", "namaste"]
+    },
+    "goodbye": {
+      "examples": ["bye", "goodbye", "see you", "that's all", "exit", "talk to you later"],
+      "keywords": ["bye", "goodbye", "exit", "quit"]
+    },
+    "thanks": {
+      "examples": ["thanks", "thank you", "thanks a lot", "that was helpful", "great, thanks"],
+      "keywords": ["thank", "thanks", "helpful"]
+    },
+    "program_list": {
+      "examples": ["what courses do you offer", "list of programs", "which programs are available", "what are the ug courses", "show me all pg programs", "what degrees can i study here", "available branches in engineering"],
+      "keywords": ["course", "program", "branch", "offer", "degree", "available"]
+    },
+    "program_fee": {
+      "examples": ["what is the fee for btech cse", "how much does mba cost", "fee structure of mtech ai", "tuition fee for mca", "what are the charges for ece", "annual fee for mechanical", "how much should i pay for the course", "total fee for 4 years"],
+      "keywords": ["fee"]
+    },
+    "program_duration": {
+      "examples": ["how long is the mba", "duration of btech", "how many years is mtech", "how many semesters in mca", "how long does phd take"],
+      "keywords": ["duration", "long", "year", "semester"]
+    },
+    "program_seats": {
+      "examples": ["how many seats in cse", "intake for mba", "seat availability for mtech ai", "total seats in ece"],
+      "keywords": ["seat", "intake", "vacancy"]
+    },
+    "eligibility": {
+      "examples": ["what is the eligibility for btech", "am i eligible for mtech ai", "eligibility criteria for mba", "can i join mca after bsc", "minimum marks required for cse", "i have 75 percent in 12th can i get btech", "i completed btech ece with 68 percent am i eligible for mtech ai", "who can apply for phd", "requirements to get into mba"],
+      "keywords": ["eligibility", "minimum", "join", "can apply", "cutoff"]
+    },
+    "admission_process": {
+      "examples": ["how do i apply", "what is the admission procedure", "steps to get admission", "how to take admission in btech", "application process for mba", "how can i register for admission"],
+      "keywords": ["apply", "admission", "procedure", "step", "register", "process"]
+    },
+    "admission_deadline": {
+      "examples": ["what is the last date to apply", "application deadline for btech", "when do applications close", "when does admission start", "when is the entrance exam", "last date for mba application"],
+      "keywords": ["deadline", "when", "start", "open", "close", "exam date"]
+    },
+    "documents_required": {
+      "examples": ["what documents are needed", "documents required for admission", "which certificates should i bring", "papers needed for counselling"],
+      "keywords": ["document", "certificate", "paper"]
+    },
+    "hostel": {
+      "examples": ["is hostel available", "hostel fee", "tell me about hostel facilities", "is there accommodation for girls", "room types in hostel", "is mess food included"],
+      "keywords": ["hostel", "mess", "room"]
+    },
+    "scholarship": {
+      "examples": ["are scholarships available", "scholarship for merit students", "fee concession for sports quota", "i scored 92 percent what scholarship will i get", "how much fee will i pay after scholarship", "financial aid options", "government scholarship for sc st"],
+      "keywords": ["scholarship", "concession", "waiver", "discount", "aid"]
+    },
+    "placement": {
+      "examples": ["how are the placements", "placement record of cse", "average package for mba", "which companies come for recruitment", "highest salary offered", "placement percentage of ece"],
+      "keywords": ["placement"]
+    },
+    "department_info": {
+      "examples": ["who is the hod of cse", "head of the ece department", "where is the mechanical department", "tell me about the cse department", "which department offers mtech ai"],
+      "keywords": ["hod", "head"]
+    },
+    "facility": {
+      "examples": ["library timings", "is there transport facility", "bus fee", "what sports facilities are there", "tell me about the labs", "does the campus have a gym", "library books"],
+      "keywords": ["library", "transport", "bus", "sports", "lab", "gym", "facility"]
+    },
+    "contact": {
+      "examples": ["how can i contact you", "phone number of admission office", "email address for enquiry", "where is the university located", "office timings", "university address"],
+      "keywords": ["contact", "phone", "email", "address", "located", "location", "call"]
+    },
+    "about_university": {
+      "examples": ["tell me about the university", "when was the university established", "is the university accredited", "naac grade"],
+      "keywords": ["established", "accredited", "naac", "accreditation"]
+    }
+  },
+
+  "smalltalk_responses": {
+    "greeting": "Hello! I am the Greenfield University enquiry assistant. Ask me about programmes, fees, eligibility, admissions, hostel, scholarships or placements.",
+    "goodbye": "Goodbye! All the best for your admission. You can reach the admissions office at +91 44 2345 6789.",
+    "thanks": "You're welcome! Is there anything else you would like to know?"
+  }
+}

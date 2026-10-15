@@ -1,0 +1,183 @@
+{
+  "_comment": "Frame-based knowledge base for the fictional 'Greenfield University'. Frames inherit slots through 'is_a' links (semantic network). All data is synthetic and created only for this academic project.",
+  "frames": {
+    "University": {
+      "is_a": null,
+      "type": "class",
+      "name": "Greenfield University",
+      "location": "Chennai, Tamil Nadu",
+      "established": 1998,
+      "accreditation": "NAAC A++ (fictional)",
+      "website": "www.greenfield-univ.example",
+      "phone": "+91 44 2345 6789",
+      "email": "admissions@greenfield-univ.example",
+      "office_hours": "Monday to Saturday, 9:00 AM to 5:00 PM"
+    },
+
+    "Program": {
+      "is_a": "University",
+      "type": "class",
+      "mode": "Full-time, on campus",
+      "application_fee": 1000,
+      "hostel_available": true,
+      "caution_deposit": 10000
+    },
+    "UGProgram": {
+      "is_a": "Program",
+      "type": "class",
+      "level": "UG",
+      "duration": "4 years (8 semesters)",
+      "entrance_exams": ["JEE Main", "GUET"],
+      "allowed_qualifications": ["12th"],
+      "required_subjects": ["pcm"],
+      "min_percentage": 60,
+      "deadline": "31 May 2027",
+      "documents": ["10th mark sheet", "12th mark sheet", "Transfer certificate", "Community certificate (if applicable)", "JEE Main / GUET score card", "Aadhaar or any government photo ID", "4 passport-size photographs"]
+    },
+    "PGProgram": {
+      "is_a": "Program",
+      "type": "class",
+      "level": "PG",
+      "duration": "2 years (4 semesters)",
+      "min_percentage": 60,
+      "required_subjects": [],
+      "deadline": "15 June 2027",
+      "documents": ["10th and 12th mark sheets", "Degree certificate (or provisional certificate)", "Consolidated mark sheet of the degree", "Entrance score card (GATE / CAT / MAT / TANCET / GUET-PG)", "Transfer certificate", "Aadhaar or any government photo ID", "4 passport-size photographs"]
+    },
+    "ResearchProgram": {
+      "is_a": "Program",
+      "type": "class",
+      "level": "Research",
+      "duration": "3 to 5 years",
+      "min_percentage": 55,
+      "required_subjects": [],
+      "deadline": "30 November 2026 (January session) and 31 May 2027 (July session)",
+      "documents": ["Master's degree certificate and mark sheets", "Research proposal (2-3 pages)", "Entrance score (UGC-NET / GATE / GUET-Research)", "Two recommendation letters", "Aadhaar or any government photo ID"]
+    },
+
+    "btech_cse": {
+      "is_a": "UGProgram", "type": "instance",
+      "name": "B.Tech Computer Science and Engineering",
+      "department": "dept_cse",
+      "fee_per_year": 150000, "seats": 180
+    },
+    "btech_aids": {
+      "is_a": "UGProgram", "type": "instance",
+      "name": "B.Tech Artificial Intelligence and Data Science",
+      "department": "dept_cse",
+      "fee_per_year": 160000, "seats": 120
+    },
+    "btech_ece": {
+      "is_a": "UGProgram", "type": "instance",
+      "name": "B.Tech Electronics and Communication Engineering",
+      "department": "dept_ece",
+      "fee_per_year": 130000, "seats": 120
+    },
+    "btech_mech": {
+      "is_a": "UGProgram", "type": "instance",
+      "name": "B.Tech Mechanical Engineering",
+      "department": "dept_mech",
+      "fee_per_year": 110000, "seats": 60
+    },
+    "mtech_ai": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "M.Tech Artificial Intelligence",
+      "department": "dept_cse",
+      "fee_per_year": 120000, "seats": 30,
+      "entrance_exams": ["GATE", "GUET-PG"],
+      "allowed_qualifications": ["btech_cse", "btech_it", "btech_ece", "btech_eee", "btech_aids", "mca", "msc_cs"],
+      "gate_stipend": "Rs. 12,400 per month for GATE-qualified students"
+    },
+    "mtech_ds": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "M.Tech Data Science",
+      "department": "dept_cse",
+      "fee_per_year": 120000, "seats": 30,
+      "entrance_exams": ["GATE", "GUET-PG"],
+      "allowed_qualifications": ["btech_cse", "btech_it", "btech_ece", "btech_eee", "btech_aids", "mca", "msc_cs", "msc_maths", "msc_stats"],
+      "gate_stipend": "Rs. 12,400 per month for GATE-qualified students"
+    },
+    "mba": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "MBA (Master of Business Administration)",
+      "department": "dept_mgmt",
+      "fee_per_year": 200000, "seats": 120,
+      "min_percentage": 50,
+      "entrance_exams": ["CAT", "MAT", "GMAT", "TANCET"],
+      "allowed_qualifications": ["any_degree"]
+    },
+    "mca": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "MCA (Master of Computer Applications)",
+      "department": "dept_mca",
+      "fee_per_year": 90000, "seats": 60,
+      "min_percentage": 50,
+      "entrance_exams": ["TANCET", "GUET-PG"],
+      "allowed_qualifications": ["bca", "bsc", "btech", "bcom"]
+    },
+    "phd": {
+      "is_a": "ResearchProgram", "type": "instance",
+      "name": "Ph.D. (all departments)",
+      "department": "dept_research",
+      "fee_per_year": 60000, "seats": 20,
+      "entrance_exams": ["UGC-NET", "GATE", "GUET-Research"],
+      "allowed_qualifications": ["mtech", "me", "msc", "mca", "mba", "ma"]
+    },
+
+    "Department": {"is_a": "University", "type": "class"},
+    "dept_cse":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Science and Engineering", "hod": "Dr. R. Lakshmi", "block": "Turing Block", "dept_email": "cse@greenfield-univ.example", "placement": {"percent_placed": 94, "average_lpa": 7.2, "highest_lpa": 32, "top_recruiters": ["TCS", "Infosys", "Zoho", "Amazon", "Freshworks"]}},
+    "dept_ece":  {"is_a": "Department", "type": "instance", "name": "Department of Electronics and Communication Engineering", "hod": "Dr. S. Arjun", "block": "Bose Block", "dept_email": "ece@greenfield-univ.example", "placement": {"percent_placed": 88, "average_lpa": 5.8, "highest_lpa": 18, "top_recruiters": ["Qualcomm", "Bosch", "HCL", "Wipro"]}},
+    "dept_mech": {"is_a": "Department", "type": "instance", "name": "Department of Mechanical Engineering", "hod": "Dr. K. Prakash", "block": "Visvesvaraya Block", "dept_email": "mech@greenfield-univ.example", "placement": {"percent_placed": 79, "average_lpa": 4.6, "highest_lpa": 12, "top_recruiters": ["Ashok Leyland", "TVS Motors", "L&T", "Hyundai"]}},
+    "dept_mgmt": {"is_a": "Department", "type": "instance", "name": "School of Management", "hod": "Dr. Meera Nair", "block": "Kautilya Block", "dept_email": "mba@greenfield-univ.example", "placement": {"percent_placed": 91, "average_lpa": 8.1, "highest_lpa": 24, "top_recruiters": ["Deloitte", "HDFC Bank", "KPMG", "Asian Paints"]}},
+    "dept_mca":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Applications", "hod": "Dr. V. Anand", "block": "Turing Block", "dept_email": "mca@greenfield-univ.example", "placement": {"percent_placed": 86, "average_lpa": 5.2, "highest_lpa": 14, "top_recruiters": ["Cognizant", "Accenture", "Capgemini"]}},
+    "dept_research": {"is_a": "Department", "type": "instance", "name": "Centre for Research", "hod": "Dr. P. Subramanian (Dean of Research)", "block": "Raman Block", "dept_email": "research@greenfield-univ.example"},
+
+    "Facility": {"is_a": "University", "type": "class"},
+    "hostel": {"is_a": "Facility", "type": "instance", "name": "Hostel",
+      "description": "Separate hostels for boys (1,200 beds) and girls (900 beds) inside the campus.",
+      "fee_per_year": 85000, "includes": "accommodation and mess (veg and non-veg)",
+      "room_types": "single, double and triple sharing", "ac_extra": 20000,
+      "timings": "In-time 9:00 PM for all students"},
+    "library": {"is_a": "Facility", "type": "instance", "name": "Central Library",
+      "description": "Over 80,000 books, 120 print journals and digital access to IEEE Xplore, Springer and ACM.",
+      "timings": "8:00 AM to 10:00 PM on weekdays, 9:00 AM to 5:00 PM on Saturdays"},
+    "transport": {"is_a": "Facility", "type": "instance", "name": "Transport",
+      "description": "40 college buses covering 25 routes across Chennai and suburbs.",
+      "fee_per_year": 18000},
+    "sports": {"is_a": "Facility", "type": "instance", "name": "Sports Complex",
+      "description": "Cricket ground, football field, indoor badminton and basketball courts, swimming pool and a gym.",
+      "timings": "6:00 AM to 8:00 PM"},
+    "labs": {"is_a": "Facility", "type": "instance", "name": "Laboratories",
+      "description": "AI and GPU computing lab, IoT lab, robotics lab, VLSI lab and CNC workshop."},
+
+    "admission_process": {"is_a": "University", "type": "instance",
+      "steps": ["Register and fill the online application at www.greenfield-univ.example/apply", "Pay the application fee of Rs. 1,000", "Appear for the entrance exam (JEE Main / GUET for UG; GATE, CAT, TANCET or GUET-PG for PG)", "Attend counselling and document verification", "Pay the first-year fee to confirm your seat"],
+      "guet_date": "20 April 2027", "applications_open": "1 January 2027"},
+
+    "scholarship_policy": {"is_a": "University", "type": "instance",
+      "merit": [{"min": 95, "waiver": 50}, {"min": 90, "waiver": 30}, {"min": 85, "waiver": 15}],
+      "sports_waiver": 25, "sibling_waiver": 10, "max_waiver": 60,
+      "government": "SC/ST/BC students can apply for Tamil Nadu post-matric government scholarships; the university helps with the paperwork."}
+  },
+
+  "program_aliases": {
+    "btech_cse":  ["btech cse", "btech computer science", "cse", "computer science", "computer science engineering", "cs engineering"],
+    "btech_aids": ["btech aids", "btech ai ds", "aids", "ai ds", "ai and ds", "ai and data science", "artificial intelligence and data science", "btech ai", "btech artificial intelligence", "btech data science"],
+    "btech_ece":  ["btech ece", "ece", "electronics", "electronics and communication", "electronic communication"],
+    "btech_mech": ["btech mech", "btech mechanical", "mech", "mechanical", "mechanical engineering"],
+    "mtech_ai":   ["mtech ai", "mtech artificial intelligence", "mtech in ai", "mtech in artificial intelligence", "artificial intelligence", "ai"],
+    "mtech_ds":   ["mtech ds", "mtech data science", "mtech in data science", "data science"],
+    "mba":        ["mba", "master of business administration", "business administration", "management"],
+    "mca":        ["mca", "master of computer applications", "computer applications"],
+    "phd":        ["phd", "doctorate", "doctoral", "research program", "research"]
+  },
+
+  "department_aliases": {
+    "dept_cse":  ["cse department", "computer science department", "cse dept", "cse"],
+    "dept_ece":  ["ece department", "electronics department", "ece dept", "ece"],
+    "dept_mech": ["mechanical department", "mech department", "mech dept", "mechanical", "mech"],
+    "dept_mgmt": ["management department", "school of management", "mba department", "management"],
+    "dept_mca":  ["mca department", "computer applications department"],
+    "dept_research": ["research centre", "research center", "centre for research"]
+  }
+}

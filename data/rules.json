@@ -1,0 +1,136 @@
+{
+  "_comment": "Production rules for the forward-chaining inference engine. Each rule fires at most once (refraction). Conditions are tested against working memory; actions add or update facts.",
+  "eligibility_rules": [
+    {"id": "R1", "name": "CGPA to percentage",
+     "if": [{"fact": "cgpa", "op": "exists"}, {"fact": "percentage", "op": "not_exists"}],
+     "then": [{"set": "percentage", "mul": ["cgpa", 9.5]}],
+     "explain": "Converted CGPA {cgpa} to {percentage:.1f}% using the standard formula (CGPA x 9.5)."},
+
+    {"id": "R2", "name": "Base cut-off",
+     "if": [{"fact": "min_percentage", "op": "exists"}],
+     "then": [{"set": "required_percentage", "from": "min_percentage"}],
+     "explain": "The minimum required aggregate for {program_name} is {min_percentage}%."},
+
+    {"id": "R3", "name": "Reservation relaxation",
+     "if": [{"fact": "category", "op": "in", "value": ["sc", "st", "obc", "bc", "mbc"]}, {"fact": "required_percentage", "op": "exists"}],
+     "then": [{"set": "required_percentage", "add": ["required_percentage", -5]}],
+     "explain": "A 5% relaxation applies for the {category_upper} category, so the cut-off becomes {required_percentage}%."},
+
+    {"id": "R4", "name": "Qualification accepted",
+     "if": [{"fact": "qualification", "op": "exists"}, {"fact": "qualification", "op": "qual_in", "value_fact": "allowed_qualifications"}],
+     "then": [{"set": "qualification_ok", "value": true}],
+     "explain": "Your qualification ({qualification_label}) is accepted for {program_name}."},
+
+    {"id": "R5", "name": "Qualification not accepted",
+     "if": [{"fact": "qualification", "op": "exists"}, {"fact": "qualification", "op": "qual_not_in", "value_fact": "allowed_qualifications"}],
+     "then": [{"set": "qualification_ok", "value": false}, {"append": "reasons", "value": "your qualification ({qualification_label}) is not in the accepted list"}],
+     "explain": "Your qualification ({qualification_label}) is NOT accepted for {program_name}."},
+
+    {"id": "R6", "name": "Marks meet cut-off",
+     "if": [{"fact": "percentage", "op": "exists"}, {"fact": "required_percentage", "op": "exists"}, {"fact": "percentage", "op": "ge_fact", "value_fact": "required_percentage"}],
+     "then": [{"set": "marks_ok", "value": true}],
+     "explain": "Your score {percentage:.1f}% meets the cut-off of {required_percentage}%."},
+
+    {"id": "R7", "name": "Marks below cut-off",
+     "if": [{"fact": "percentage", "op": "exists"}, {"fact": "required_percentage", "op": "exists"}, {"fact": "percentage", "op": "lt_fact", "value_fact": "required_percentage"}],
+     "then": [{"set": "marks_ok", "value": false}, {"append": "reasons", "value": "your score is below the cut-off"}],
+     "explain": "Your score {percentage:.1f}% is BELOW the cut-off of {required_percentage}%."},
+
+    {"id": "R8", "name": "Subject requirement met",
+     "if": [{"fact": "required_subjects", "op": "non_empty"}, {"fact": "subjects", "op": "contains_all", "value_fact": "required_subjects"}],
+     "then": [{"set": "subjects_ok", "value": true}],
+     "explain": "You studied the required subjects (Physics, Chemistry, Mathematics)."},
+
+    {"id": "R9", "name": "Subject requirement unknown",
+     "if": [{"fact": "required_subjects", "op": "non_empty"}, {"fact": "subjects", "op": "not_exists"}],
+     "then": [{"set": "subjects_ok", "value": "assumed"}],
+     "explain": "Subjects were not mentioned, so I assume you studied Physics, Chemistry and Mathematics in 12th."},
+
+    {"id": "R10", "name": "Subject requirement not met",
+     "if": [{"fact": "required_subjects", "op": "non_empty"}, {"fact": "subjects", "op": "exists"}, {"fact": "subjects", "op": "not_contains_all", "value_fact": "required_subjects"}],
+     "then": [{"set": "subjects_ok", "value": false}, {"append": "reasons", "value": "Physics, Chemistry and Mathematics are compulsory in 12th"}],
+     "explain": "B.Tech admission needs Physics, Chemistry and Mathematics in 12th, which you did not mention."},
+
+    {"id": "R11", "name": "No subject requirement",
+     "if": [{"fact": "required_subjects", "op": "empty"}],
+     "then": [{"set": "subjects_ok", "value": true}],
+     "explain": "There is no specific subject requirement for {program_name}."},
+
+    {"id": "R12", "name": "Academically eligible",
+     "if": [{"fact": "qualification_ok", "op": "eq", "value": true}, {"fact": "marks_ok", "op": "eq", "value": true}, {"fact": "subjects_ok", "op": "ne", "value": false}],
+     "then": [{"set": "academic_eligible", "value": true}],
+     "explain": "Conclusion: you satisfy the academic eligibility for {program_name}."},
+
+    {"id": "R13", "name": "Not eligible",
+     "if": [{"fact": "reasons", "op": "non_empty"}],
+     "then": [{"set": "academic_eligible", "value": false}],
+     "explain": "Conclusion: you are not eligible for {program_name}."},
+
+    {"id": "R14", "name": "Entrance exam satisfied",
+     "if": [{"fact": "exam", "op": "exists"}, {"fact": "exam", "op": "in_fact", "value_fact": "entrance_exams_lower"}],
+     "then": [{"set": "entrance_ok", "value": true}],
+     "explain": "Your {exam_upper} score is accepted for admission."},
+
+    {"id": "R15", "name": "Entrance exam pending",
+     "if": [{"fact": "academic_eligible", "op": "eq", "value": true}, {"fact": "entrance_ok", "op": "not_exists"}],
+     "then": [{"set": "entrance_ok", "value": "pending"}],
+     "explain": "You still need a valid entrance score ({entrance_list})."},
+
+    {"id": "R16", "name": "GATE stipend",
+     "if": [{"fact": "academic_eligible", "op": "eq", "value": true}, {"fact": "exam", "op": "eq", "value": "gate"}, {"fact": "gate_stipend", "op": "exists"}],
+     "then": [{"set": "stipend", "value": true}],
+     "explain": "Because you qualified GATE you are eligible for a stipend: {gate_stipend}."}
+  ],
+
+  "scholarship_rules": [
+    {"id": "S0", "name": "Start with no waiver",
+     "if": [{"fact": "fee_per_year", "op": "exists"}],
+     "then": [{"set": "waiver", "value": 0}],
+     "explain": "The tuition fee for {program_name} is {fee_per_year_rs} per year."},
+
+    {"id": "S1", "name": "CGPA to percentage",
+     "if": [{"fact": "cgpa", "op": "exists"}, {"fact": "percentage", "op": "not_exists"}],
+     "then": [{"set": "percentage", "mul": ["cgpa", 9.5]}],
+     "explain": "Converted CGPA {cgpa} to {percentage:.1f}%."},
+
+    {"id": "S2", "name": "Merit tier 1 (>= 95%)",
+     "if": [{"fact": "percentage", "op": "ge", "value": 95}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "waiver", "add": ["waiver", 50]}, {"set": "merit_done", "value": true}],
+     "explain": "Merit scholarship: {percentage:.1f}% >= 95% gives a 50% tuition waiver."},
+
+    {"id": "S3", "name": "Merit tier 2 (90-94.9%)",
+     "if": [{"fact": "percentage", "op": "ge", "value": 90}, {"fact": "percentage", "op": "lt", "value": 95}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "waiver", "add": ["waiver", 30]}, {"set": "merit_done", "value": true}],
+     "explain": "Merit scholarship: {percentage:.1f}% is in the 90-95% band, which gives a 30% waiver."},
+
+    {"id": "S4", "name": "Merit tier 3 (85-89.9%)",
+     "if": [{"fact": "percentage", "op": "ge", "value": 85}, {"fact": "percentage", "op": "lt", "value": 90}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "waiver", "add": ["waiver", 15]}, {"set": "merit_done", "value": true}],
+     "explain": "Merit scholarship: {percentage:.1f}% is in the 85-90% band, which gives a 15% waiver."},
+
+    {"id": "S5", "name": "No merit scholarship",
+     "if": [{"fact": "percentage", "op": "lt", "value": 85}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "merit_done", "value": false}],
+     "explain": "{percentage:.1f}% is below 85%, so no merit waiver applies."},
+
+    {"id": "S6", "name": "Sports quota",
+     "if": [{"fact": "sports", "op": "eq", "value": true}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "waiver", "add": ["waiver", 25]}],
+     "explain": "Sports quota (state/national level) adds a 25% waiver."},
+
+    {"id": "S7", "name": "Sibling concession",
+     "if": [{"fact": "sibling", "op": "eq", "value": true}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "waiver", "add": ["waiver", 10]}],
+     "explain": "Sibling concession adds a 10% waiver."},
+
+    {"id": "S8", "name": "Cap total waiver at 60%",
+     "if": [{"fact": "waiver", "op": "gt", "value": 60}],
+     "then": [{"set": "waiver", "value": 60}],
+     "explain": "The total waiver is capped at 60%."},
+
+    {"id": "S9", "name": "Compute net fee",
+     "if": [{"fact": "fee_per_year", "op": "exists"}, {"fact": "waiver", "op": "exists"}],
+     "then": [{"set": "net_fee", "net": ["fee_per_year", "waiver"]}],
+     "explain": "Net tuition fee = {fee_per_year_rs} - {waiver}% = {net_fee_rs} per year."}
+  ]
+}

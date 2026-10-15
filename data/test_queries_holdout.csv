@@ -1,0 +1,26 @@
+id,conv_id,category,query,expected_intent,expected_key
+H01,,factual,What is the annual fee for B.Tech AI and Data Science?,program_fee,program_fee:btech_aids
+H02,,factual,How many seats does M.Tech Data Science have?,program_seats,program_seats:mtech_ds
+H03,,paraphrase,Who is in charge of the mechanical department?,department_info,department_info:dept_mech
+H04,,paraphrase,Till what time is the library open?,facility,facility:library
+H05,,paraphrase,Is there a bus service from the city?,facility,facility:transport
+H06,,paraphrase,What is the hostel room rent including food?,hostel,hostel
+H07,,paraphrase,What average salary do ECE graduates get?,placement,placement:dept_ece
+H08,,paraphrase,What papers do I need for the MBA admission?,documents_required,documents_required:PG
+H09,,typo,feees for mca,program_fee,program_fee:mca
+H10,,typo,how to aply for admision,admission_process,admission_process
+H11,,typo,eligibilty for phd,eligibility,eligibility:phd
+H12,,reasoning,I scored 64% in 12th with physics chemistry maths. Can I get into B.Tech AI and DS?,eligibility,eligibility:btech_aids:yes
+H13,,reasoning,I have 5.8 CGPA in MCA. Can I apply for M.Tech AI?,eligibility,eligibility:mtech_ai:no
+H14,,reasoning,I completed B.Sc maths with 70%. Am I eligible for M.Tech Data Science?,eligibility,eligibility:mtech_ds:no
+H15,,reasoning,I got 97% in 12th and my sister studies here. What is my fee for B.Tech CSE?,scholarship,scholarship:btech_cse:calc
+H16,,reasoning,I am a BC student with 56% in 12th PCM. Am I eligible for B.Tech ECE?,eligibility,eligibility:btech_ece:yes
+H17,G1,multi_turn,Tell me about the MCA programme fee,program_fee,program_fee:mca
+H18,G1,multi_turn,How many years is it?,program_duration,program_duration:mca
+H19,G1,multi_turn,Am I eligible? I did BCA with 66%,eligibility,eligibility:mca:yes
+H20,,unstructured_faq,What is the syllabus of the GUET entrance exam?,faq,faq:exam_pattern
+H21,,unstructured_faq,Are there any student clubs?,faq,faq:clubs
+H22,,unstructured_faq,How are seats allotted during counselling?,faq,faq:counselling
+H23,,out_of_scope,Who is the prime minister of India?,out_of_scope,fallback
+H24,,out_of_scope,Suggest a good movie for the weekend,out_of_scope,fallback
+H25,,out_of_scope,How to reset my phone password?,out_of_scope,fallback

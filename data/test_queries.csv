@@ -1,0 +1,106 @@
+id,conv_id,category,query,expected_intent,expected_key
+F01,,factual,What is the fee for B.Tech ECE?,program_fee,program_fee:btech_ece
+F02,,factual,How many seats are there in MBA?,program_seats,program_seats:mba
+F03,,factual,What is the duration of the M.Tech Data Science programme?,program_duration,program_duration:mtech_ds
+F04,,factual,Who is the HOD of the ECE department?,department_info,department_info:dept_ece
+F05,,factual,What are the library timings?,facility,facility:library
+F06,,factual,Is hostel available?,hostel,hostel
+F07,,factual,What is the admission process?,admission_process,admission_process
+F08,,factual,What documents are required for PG admission?,documents_required,documents_required:PG
+F09,,factual,What is the eligibility for MBA?,eligibility,eligibility:mba
+F10,,factual,What scholarships are available?,scholarship,scholarship
+F11,,factual,How are the placements in the CSE department?,placement,placement:dept_cse
+F12,,factual,What courses do you offer?,program_list,program_list:all
+F13,,factual,What is the last date to apply for B.Tech?,admission_deadline,admission_deadline:UG
+F14,,factual,How can I contact the admissions office?,contact,contact
+F15,,factual,Tell me about the university,about_university,about_university
+F16,,factual,What is the fee for PhD?,program_fee,program_fee:phd
+F17,,factual,What is the eligibility for M.Tech AI?,eligibility,eligibility:mtech_ai
+F18,,factual,Which department offers MCA?,department_info,department_info:dept_mca
+F19,,factual,Is there transport facility?,facility,facility:transport
+F20,,factual,What PG programmes are available?,program_list,program_list:PG
+P01,,paraphrase,How much does it cost to study mechanical engineering here?,program_fee,program_fee:btech_mech
+P02,,paraphrase,What would I have to pay per year for the MCA course?,program_fee,program_fee:mca
+P03,,paraphrase,How many years will the PhD take?,program_duration,program_duration:phd
+P04,,paraphrase,Do you provide accommodation for girls?,hostel,hostel
+P05,,paraphrase,Who heads the school of management?,department_info,department_info:dept_mgmt
+P06,,paraphrase,What kind of salary packages do MBA students get?,placement,placement:dept_mgmt
+P07,,paraphrase,Which companies visit for recruitment in mechanical?,placement,placement:dept_mech
+P08,,paraphrase,When do applications close for postgraduate courses?,admission_deadline,admission_deadline:PG
+P09,,paraphrase,What certificates should I bring for B.Tech counselling?,documents_required,documents_required:UG
+P10,,paraphrase,What are the requirements to get into the M.Tech data science course?,eligibility,eligibility:mtech_ds
+P11,,paraphrase,How do I enrol for the B.Tech programme?,admission_process,admission_process
+P12,,paraphrase,Any fee concession for good students?,scholarship,scholarship
+P13,,paraphrase,What is the intake for B.Tech AI and DS?,program_seats,program_seats:btech_aids
+P14,,paraphrase,What's the phone number of the university?,contact,contact
+P15,,paraphrase,Is the university NAAC accredited?,about_university,about_university
+P16,,paraphrase,Which undergraduate branches of engineering can I study?,program_list,program_list:UG
+P17,,paraphrase,Can you tell me the tuition for artificial intelligence and data science?,program_fee,program_fee:btech_aids
+P18,,paraphrase,Where is the computer science department located?,department_info,department_info:dept_cse
+P19,,paraphrase,Do you have a gym on campus?,facility,facility:sports
+P20,,paraphrase,What is the cutoff for B.Tech?,eligibility,eligibility:group:btech|eligibility:btech_cse|eligibility:btech_ece|eligibility:btech_mech|eligibility:btech_aids
+T01,,typo,wat is the fess for mba,program_fee,program_fee:mba
+T02,,typo,hostel feez,hostel,hostel
+T03,,typo,placemnt record of ece,placement,placement:dept_ece
+T04,,typo,eligiblity for mca,eligibility,eligibility:mca
+T05,,typo,librery timing,facility,facility:library
+T06,,typo,scholarshp details,scholarship,scholarship
+T07,,typo,duraton of mtech ai,program_duration,program_duration:mtech_ai
+T08,,typo,documnets needed for admision,documents_required,documents_required:UG
+T09,,typo,admision procedure,admission_process,admission_process
+T10,,typo,contcat number,contact,contact
+R01,,reasoning,I scored 82% in 12th with PCM. Am I eligible for B.Tech CSE?,eligibility,eligibility:btech_cse:yes
+R02,,reasoning,I got 55% in 12th. Can I join B.Tech ECE?,eligibility,eligibility:btech_ece:no
+R03,,reasoning,I am an OBC student with 57% in 12th (PCM). Am I eligible for B.Tech mechanical?,eligibility,eligibility:btech_mech:yes
+R04,,reasoning,I studied biology in 12th and got 90%. Can I do B.Tech CSE?,eligibility,eligibility:btech_cse:no
+R05,,reasoning,I completed B.Tech ECE with 72%. Am I eligible for M.Tech AI?,eligibility,eligibility:mtech_ai:yes
+R06,,reasoning,I have a B.Com degree with 65%. Can I apply for M.Tech AI?,eligibility,eligibility:mtech_ai:no
+R07,,reasoning,I have 6.0 CGPA in B.Tech CSE. Am I eligible for M.Tech Data Science?,eligibility,eligibility:mtech_ds:no
+R08,,reasoning,I have 7.5 CGPA in B.Tech IT and a GATE score. Am I eligible for M.Tech AI?,eligibility,eligibility:mtech_ai:yes
+R09,,reasoning,I did BBA with 52%. Can I join the MBA?,eligibility,eligibility:mba:yes
+R10,,reasoning,I did BA with 48%. Am I eligible for MBA?,eligibility,eligibility:mba:no
+R11,,reasoning,I am SC category with 46% in BA. Am I eligible for MBA?,eligibility,eligibility:mba:yes
+R12,,reasoning,I scored 96% in 12th. What will my fee be for B.Tech ECE?,scholarship,scholarship:btech_ece:calc
+R13,,reasoning,I got 88 percent and I am a state level cricket player. How much fee for B.Tech mechanical after scholarship?,scholarship,scholarship:btech_mech:calc
+R14,,reasoning,My percentage is 75. What scholarship can I get for B.Tech AI and DS?,scholarship,scholarship:btech_aids:calc
+R15,,reasoning,I have an M.Sc with 60%. Can I do a PhD?,eligibility,eligibility:phd:yes
+R16,,reasoning,Am I eligible for MCA with 45% in BSc?,eligibility,eligibility:mca:no
+M01,C1,multi_turn,What is the fee for M.Tech AI?,program_fee,program_fee:mtech_ai
+M02,C1,multi_turn,How many seats does it have?,program_seats,program_seats:mtech_ai
+M03,C1,multi_turn,And how long is the course?,program_duration,program_duration:mtech_ai
+M04,C1,multi_turn,What about MBA?,program_duration,program_duration:mba
+M05,C2,multi_turn,Am I eligible for B.Tech CSE?,eligibility,eligibility:btech_cse:ask
+M06,C2,multi_turn,I scored 78% in 12th with PCM,eligibility,eligibility:btech_cse:yes
+M07,C3,multi_turn,I want to know the fees of the ECE branch,program_fee,program_fee:btech_ece
+M08,C3,multi_turn,Who is the HOD?,department_info,department_info:dept_ece
+M09,C3,multi_turn,What about placements?,placement,placement:dept_ece
+M10,C4,multi_turn,"I got 91% in 12th, how much scholarship will I get?",scholarship,scholarship:ask_program
+M11,C4,multi_turn,For B.Tech CSE,scholarship,scholarship:btech_cse:calc
+M12,C5,multi_turn,Can I join MBA after B.Com?,eligibility,eligibility:mba:ask
+M13,C5,multi_turn,I have 61 percent,eligibility,eligibility:mba:yes
+M14,C5,multi_turn,What is the fee?,program_fee,program_fee:mba
+U01,,unstructured_faq,Is the campus free from ragging?,faq,faq:ragging
+U02,,unstructured_faq,Do you have wifi in the hostel?,faq,faq:wifi
+U03,,unstructured_faq,Can diploma holders get lateral entry?,faq,faq:lateral_entry
+U04,,unstructured_faq,Is there any NRI quota?,faq,faq:nri_quota
+U05,,unstructured_faq,Are internships compulsory?,faq,faq:internship
+U06,,unstructured_faq,Is there a canteen?,faq,faq:canteen
+U07,,unstructured_faq,"If I fall sick on campus, is there a doctor?",faq,faq:medical
+U08,,unstructured_faq,Do we have to wear a uniform?,faq,faq:dress_code
+U09,,unstructured_faq,Can I study abroad for a semester?,faq,faq:exchange
+U10,,unstructured_faq,Will I get a refund if I cancel my admission?,faq,faq:refund
+U11,,unstructured_faq,How much attendance is needed to write exams?,faq,faq:attendance
+U12,,unstructured_faq,Can I get a bank loan for my studies?,faq,faq:education_loan
+O01,,out_of_scope,What is the weather in Chennai today?,out_of_scope,fallback
+O02,,out_of_scope,Who won the cricket match yesterday?,out_of_scope,fallback
+O03,,out_of_scope,Can you book a movie ticket for me?,out_of_scope,fallback
+O04,,out_of_scope,What is the capital of France?,out_of_scope,fallback
+O05,,out_of_scope,Tell me a joke,out_of_scope,fallback
+O06,,out_of_scope,How do I cook biryani?,out_of_scope,fallback
+O07,,out_of_scope,What is the share price of Infosys?,out_of_scope,fallback
+O08,,out_of_scope,Recommend a good laptop under 50000,out_of_scope,fallback
+O09,,out_of_scope,Translate good night into French,out_of_scope,fallback
+O10,,out_of_scope,What is the meaning of life?,out_of_scope,fallback
+S01,,smalltalk,Hello there,greeting,greeting
+S02,,smalltalk,Thank you so much,thanks,thanks
+S03,,smalltalk,Bye,goodbye,goodbye
