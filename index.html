@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Greenfield Enquiry Chatbot</title>
-<meta name="description" content="University enquiry chatbot built with Knowledge Representation and NLP - M.Tech Fundamentals of AI mini project.">
+<title>AI University Enquiry</title>
+<meta name="description" content="AI University enquiry chatbot built with Knowledge Representation and NLP - M.Tech Fundamentals of AI mini project.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6f4a'/%3E%3Cpath d='M32 14 8 26l24 12 20-10v14h4V26z' fill='%23fff'/%3E%3Cpath d='M18 34v10c0 4 7 8 14 8s14-4 14-8V34l-14 7z' fill='%23cfe8da'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="web/css/style.css">
 </head>
@@ -18,8 +18,8 @@
         <svg viewBox="0 0 64 64"><path d="M32 14 8 26l24 12 20-10v14h4V26z" fill="currentColor"/><path d="M18 34v10c0 4 7 8 14 8s14-4 14-8V34l-14 7z" fill="currentColor" opacity=".55"/></svg>
       </div>
       <div>
-        <div class="brand-name">Greenfield University</div>
-        <div class="brand-sub">Admissions enquiry desk</div>
+        <div class="brand-name">AI University</div>
+        <div class="brand-sub">University enquiry desk</div>
       </div>
     </div>
 
@@ -34,6 +34,7 @@
       <div class="demo-buttons">
         <button class="btn btn-ghost" data-demo="1">Demo 1 · M.Tech</button>
         <button class="btn btn-ghost" data-demo="2">Demo 2 · MBA &amp; fees</button>
+        <button class="btn btn-ghost" data-demo="3">Demo 3 · Exams &amp; services</button>
       </div>
     </div>
 
@@ -46,9 +47,9 @@
       <button class="icon-btn only-mobile" id="openSidebar" aria-label="Show sample questions">
         <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
-      <div class="bot-avatar" aria-hidden="true">G</div>
+      <div class="bot-avatar" aria-hidden="true">AI</div>
       <div class="chat-title">
-        <div class="chat-name">Greenfield Assistant</div>
+        <div class="chat-name">AI University Assistant</div>
         <div class="chat-status"><span class="dot"></span><span id="status">Loading knowledge base…</span></div>
       </div>
       <div class="head-actions">
@@ -58,9 +59,6 @@
         <button class="icon-btn" id="openAbout" aria-label="About this project" title="About this project">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
         </button>
-        <button class="icon-btn only-narrow" id="openExplain" aria-label="How the bot answered" title="How the bot answered">
-          <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
-        </button>
       </div>
     </header>
 
@@ -69,25 +67,13 @@
     <div class="suggestions" id="suggestions"></div>
 
     <form class="composer" id="composer" autocomplete="off">
-      <textarea id="input" rows="1" placeholder="Ask about courses, fees, eligibility…" aria-label="Your question" disabled></textarea>
+      <textarea id="input" rows="1" placeholder="Ask anything about AI University…" aria-label="Your question" disabled></textarea>
       <button class="send" id="send" type="submit" aria-label="Send" disabled>
         <svg viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-3-7z"/></svg>
       </button>
     </form>
   </main>
 
-  <!-- ============ right: how the answer was produced ============ -->
-  <aside class="explain" id="explain">
-    <div class="explain-head">
-      <h2>How I answered</h2>
-      <button class="icon-btn only-narrow" id="closeExplain" aria-label="Close">
-        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </div>
-    <div class="explain-body" id="explainBody">
-      <div class="empty-note">Ask a question. This panel shows what the bot understood, which part of the system answered, and which rules fired.</div>
-    </div>
-  </aside>
 </div>
 
 <div class="scrim" id="scrim"></div>
@@ -97,34 +83,40 @@
   <form method="dialog" class="about-close"><button class="icon-btn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>
   <p class="eyebrow">M.Tech · Fundamentals of Artificial Intelligence · Mini project (topic 29)</p>
   <h2>AI-Based University Enquiry Chatbot</h2>
-  <p>An enquiry chatbot for the fictional <b>Greenfield University</b>, built with <b>Knowledge Representation + NLP</b>.
+  <p>A complete enquiry chatbot for the fictional <b>AI University</b>, built with <b>Knowledge Representation + NLP</b>.
+     It answers questions about the whole university: admissions and programmes, fees, the academic calendar, exams and results,
+     certificates, university offices, departments, hostel, placements, events and research.
      There is no large language model inside. Every answer comes from a knowledge base or a rule, so it can always be explained.</p>
 
   <h3>Team</h3>
   <table class="mini">
-    <tr><th>Name</th><th>Roll No.</th></tr>
-    <tr><td>Manikandan</td><td>35</td></tr>
-    <tr><td>Manoj Kumar</td><td>05</td></tr>
-    <tr><td>Dinakar</td><td>32</td></tr>
+    <tr><th>Name</th><th>Register No.</th></tr>
+    <tr><td>Manikandan Ayyakkannu</td><td>RA2612049015035</td></tr>
+    <tr><td>Dinakar B</td><td>RA2612049015032</td></tr>
+    <tr><td>Manoj Kumar R</td><td>RA2612049015005</td></tr>
   </table>
 
   <h3>How it works</h3>
   <ul class="how">
-    <li><b>Frames with inheritance</b>: programmes, departments and facilities stored as a semantic network (<code>is_a</code> links).</li>
+    <li><b>Frames with inheritance</b>: programmes, departments, offices, certificates, the academic calendar, exams and facilities stored as a semantic network (<code>is_a</code> links).</li>
     <li><b>Forward-chaining rules</b>: 26 IF-THEN rules decide eligibility and scholarships, and explain every step.</li>
-    <li><b>NLP pipeline</b>: abbreviation normalisation (B.E, M.Tech, plus two, CGPA), spelling correction, synonyms, stemming, entity extraction, intent classification.</li>
-    <li><b>Dialogue manager</b>: follow-up questions ("How long is it?") and asking for missing details.</li>
+    <li><b>NLP pipeline</b>: abbreviation normalisation (B.E, M.Tech, plus two, CGPA, sem), spelling correction, synonyms, stemming, entity extraction, intent classification (27 intents).</li>
+    <li><b>Dialogue manager</b>: follow-up questions ("How long is it?", "Which office handles it?") and asking for missing details.</li>
     <li><b>Vector store</b>: TF-IDF search over FAQ passages for topics that are not in the frames.</li>
+    <li><b>Closed-world assumption</b>: a department that is not in the knowledge base is not offered, and other universities are not covered, so the bot says so instead of guessing.</li>
   </ul>
   <img src="docs/figures/fig_architecture.png" alt="Architecture of the chatbot" class="arch" loading="lazy">
 
-  <h3>Results</h3>
+  <h3>Results (share of correct answers)</h3>
   <table class="mini">
-    <tr><th>System</th><th>Main test set (105)</th><th>Held-out (25)</th></tr>
-    <tr><td>Keyword FAQ matching</td><td>31.4%</td><td>32.0%</td></tr>
-    <tr><td>NLP + vector retrieval</td><td>38.1%</td><td>48.0%</td></tr>
-    <tr class="hl"><td>Hybrid KR + NLP (this chatbot)</td><td>92.4%</td><td>80.0%</td></tr>
+    <tr><th>Test set</th><th>This chatbot</th><th>NLP + retrieval</th><th>Keyword FAQ</th></tr>
+    <tr><td>Admissions - main (105)</td><td><b>94.3%</b></td><td>32.4%</td><td>26.7%</td></tr>
+    <tr><td>Admissions - held-out (25)</td><td><b>80.0%</b></td><td>48.0%</td><td>32.0%</td></tr>
+    <tr><td>University services - development (40)</td><td><b>100%</b></td><td>45.0%</td><td>42.5%</td></tr>
+    <tr><td>University services - held-out (20)</td><td><b>90.0%</b></td><td>40.0%</td><td>40.0%</td></tr>
   </table>
+  <p class="small">The university-services held-out set scored 80.0% when it was first run; it revealed a spelling-correction bug, and after that fix it scores 90.0%.
+     The development set was used while building these features, so its 100% is optimistic.</p>
   <p class="small">You can re-run the test sets in your browser on the <a href="tests/engine-test.html" target="_blank" rel="noopener">test page</a>. All university data is made up for this project.</p>
 </dialog>
 

@@ -27,9 +27,13 @@ _NORMALISE = [
     (r"\bb\.\s?sc\b\.?|\bb\s?sc\b", "bsc"),
     (r"\bm\.\s?sc\b\.?|\bm\s?sc\b", "msc"),
     (r"\bb\.\s?com\b\.?", "bcom"),
+    (r"\bm\.\s?com\b\.?", "mcom"),
+    (r"\bb\.b\.a\b\.?", "bba"),
     (r"\bb\.\s?a\b\.?", "ba"),
+    (r"\bm\.\s?a\b\.?", "ma"),
     (r"\bplus\s?two\b|\+\s?2\b|\bhsc\b|\bclass\s?12\b|\b12th\s+(?:std|standard|grade)\b|\bhigher secondary\b|\btwelfth\b", "12th"),
     (r"\ba\.i\.?", "ai"),
+    (r"\bai\s+university\b", "university"),        # the university's own name, not the AI programme
     (r"\bai\s*(?:&|and|-|/)\s*ds\b", "ai ds"),
     (r"\bai\s*(?:&|and|-|/)\s*data science\b", "ai ds"),
     (r"\bartificial intelligence (?:&|and) data science\b", "ai ds"),
@@ -103,7 +107,12 @@ WORD_SYNONYMS = {
     "where": "location", "situated": "location", "located": "location",
     # greetings
     "hii": "hi", "hai": "hi", "helo": "hello", "thx": "thanks", "thankyou": "thanks",
+    # student short forms
+    "sem": "semester", "sems": "semester", "exams": "exam", "dd": "draft",
 }
+
+# the words the synonym table is built on; preferred when spelling correction finds a tie
+CORE_WORDS = set(WORD_SYNONYMS) | set(WORD_SYNONYMS.values())
 
 STOPWORDS = set("""
 a an the is are am was were be been being do does did doing to of in on at for from by
@@ -122,6 +131,7 @@ house money world water phone write right wrong little small large young older v
 free freely trees three where whose whom please hello thanks thank sorry bring brought
 match matches team teams player won lost meaning capital joke jokes laptop mobile ticket
 recipe cook cooking travel train flight hotel
+using used uses useful possible parts break lunch week weeks month months today daily every
 """.split())
 
 # words that should never be "corrected"
@@ -184,10 +194,12 @@ class TextPreprocessor:
                     and tok not in STOPWORDS and tok not in COMMON_WORDS):
                 # short words need the same first letter to avoid wild corrections
                 cands = self.vocabulary if len(tok) >= 5 else {w for w in self.vocabulary if w[:1] == tok[:1]}
-                match = difflib.get_close_matches(tok, cands, n=1, cutoff=0.8 if len(tok) >= 5 else 0.75)
+                match = difflib.get_close_matches(tok, cands, n=10, cutoff=0.8 if len(tok) >= 5 else 0.75)
                 if match:
-                    corrections[tok] = match[0]
-                    tok = match[0]
+                    # equally close candidates: prefer a core domain word ("fess" -> "fees", not "fest")
+                    best = max(match, key=lambda w: (difflib.SequenceMatcher(None, w, tok).ratio(), w in CORE_WORDS, w))
+                    corrections[tok] = best
+                    tok = best
             fixed.append(tok)
         return fixed, corrections
 
@@ -217,7 +229,7 @@ LEVEL_PATTERNS = [
     ("mba", r"mba|master of business administration|business administration"),
     ("mca", r"mca|master of computer applications"),
     ("phd", r"phd|doctorate|doctoral"),
-    ("bsc", r"bsc"), ("msc", r"msc"), ("bca", r"bca"), ("bcom", r"bcom"),
+    ("bsc", r"bsc"), ("msc", r"msc"), ("bca", r"bca"), ("bcom", r"bcom"), ("mcom", r"mcom"),
     ("ba", r"ba"), ("ma", r"ma"), ("bba", r"bba"), ("diploma", r"diploma"), ("12th", r"12th"),
     ("pg", r"pg|postgraduate|post graduate|masters"),
 ]
@@ -236,6 +248,10 @@ BRANCH_PATTERNS = [
     ("physics", r"physics"),
     ("chemistry", r"chemistry"),
     ("commerce", r"commerce"),
+    ("english", r"english literature|english"),
+    ("economics", r"economics"),
+    ("analytics", r"business analytics|analytics"),
+    ("finance", r"finance"),
 ]
 LEVELS_RE = re.compile(r"\b(?:" + "|".join(f"(?P<L_{n.replace('12th', 'twelfth')}>{p})"
                                            for n, p in LEVEL_PATTERNS) + r")\b")
@@ -247,7 +263,15 @@ OFFERED = {
     ("mtech", "ai"): "mtech_ai", ("mtech", "aids"): "mtech_ai", ("mtech", "ds"): "mtech_ds",
     ("mtech", "cse"): "mtech_ai",
     ("mba", None): "mba", ("mca", None): "mca", ("phd", None): "phd",
+    ("mba", "analytics"): "mba_ba", ("mba", "finance"): "mba_finance",
+    ("bsc", "cse"): "bsc_cs", ("bsc", "maths"): "bsc_maths", ("bca", None): "bca",
+    ("bcom", None): "bcom", ("bba", None): "bba", ("mcom", None): "mcom",
+    ("ba", "english"): "ba_english", ("ba", "economics"): "ba_economics", ("ma", "english"): "ma_english",
 }
+# degrees that are either a programme we offer or the student's own qualification
+FLEX_LEVELS = {"bsc", "bca", "bcom", "ba", "bba", "msc", "ma", "mcom"}
+# branches a level may be combined with when it is read as one degree
+LEVEL_BRANCHES = {"mba": {"analytics", "finance"}, "mca": set(), "phd": set(), "12th": set(), "diploma": set()}
 BARE_BRANCH = {"cse": "btech_cse", "ece": "btech_ece", "mech": "btech_mech", "aids": "btech_aids",
                "ai": "mtech_ai", "ds": "mtech_ds"}
 GROUPS = {"btech": "group:btech", "mtech": "group:mtech", "pg": "group:pg"}
@@ -277,16 +301,17 @@ class DegreeMention:
     start: int
     end: int
     role: str = "unknown"        # "target" | "qualification" | "unknown"
+    ambiguous: bool = False      # no cue word: could be the programme asked about or the student's degree
 
     @property
     def program(self) -> str | None:
-        if self.level in ("btech", "mtech") and self.branch:
-            return OFFERED.get((self.level, self.branch))
-        if self.level in ("mba", "mca", "phd"):
-            return OFFERED[(self.level, None)]
-        if self.level is None and self.branch:
-            return BARE_BRANCH.get(self.branch)
-        return None
+        if self.level is None:
+            return BARE_BRANCH.get(self.branch) if self.branch else None
+        if self.branch and (self.level, self.branch) in OFFERED:
+            return OFFERED[(self.level, self.branch)]
+        if self.level in ("btech", "mtech"):
+            return None                     # a branch we do not offer, or no branch at all
+        return OFFERED.get((self.level, None))
 
     @property
     def group(self) -> str | None:
@@ -322,6 +347,8 @@ class Entities:
     qualification: str | None = None       # applicant's qualification e.g. btech_ece
     department: str | None = None
     facility: str | None = None
+    office: str | None = None              # e.g. office_coe (exam cell)
+    certificate: str | None = None         # e.g. cert_bonafide
     percentage: float | None = None
     cgpa: float | None = None
     exam: str | None = None
@@ -330,9 +357,12 @@ class Entities:
     sports: bool = False
     sibling: bool = False
     level_filter: str | None = None        # "UG" / "PG" for programme listing
+    year: str | None = None                # academic season, e.g. "2022-23"
+    ambiguous_qualification: str | None = None   # degree read as the programme, but it may be the student's own
 
     def as_dict(self) -> dict[str, Any]:
-        d = {k: v for k, v in self.__dict__.items() if k != "degrees" and v not in (None, False, [])}
+        d = {k: v for k, v in self.__dict__.items()
+             if k not in ("degrees", "ambiguous_qualification") and v not in (None, False, [])}
         return d
 
     @property
@@ -345,6 +375,8 @@ class EntityExtractor:
         self.kb = kb
         self.dept_alias = sorted(((a, d) for d, al in kb.department_aliases.items() for a in al),
                                  key=lambda x: -len(x[0]))
+        self.office_alias = sorted(((a, o) for o, al in kb.office_aliases.items() for a in al), key=lambda x: -len(x[0]))
+        self.cert_alias = sorted(((a, c) for c, al in kb.certificate_aliases.items() for a in al), key=lambda x: -len(x[0]))
 
     def _degrees(self, text: str) -> list[DegreeMention]:
         tokens = text.split()
@@ -369,7 +401,7 @@ class EntityExtractor:
         for lvl, s, e in levels:
             best = None
             for bi, (br, bs, be) in enumerate(branches):
-                if bi in used:
+                if bi in used or br not in LEVEL_BRANCHES.get(lvl, {br}):
                     continue
                 gap_after = bs - e          # branch after level: "btech in cse"
                 gap_before = s - be         # branch before level: "cse btech"
@@ -377,7 +409,7 @@ class EntityExtractor:
                     dist = gap_after if gap_after > 0 else gap_before + 0.5
                     if best is None or dist < best[0]:
                         best = (dist, bi)
-            if best and lvl not in ("mba", "mca", "phd", "12th", "diploma"):
+            if best:
                 used.add(best[1])
                 br, bs, be = branches[best[1]]
                 mentions.append(DegreeMention(lvl, br, min(s, bs), max(e, be)))
@@ -389,9 +421,20 @@ class EntityExtractor:
         mentions.sort(key=lambda m: m.start)
 
         for m in mentions:
-            before = set(tokens[max(0, m.start - 3): m.start])
-            if m.level in ("12th", "bsc", "bca", "bcom", "ba", "bba", "diploma", "msc", "ma"):
+            # the 3 words before the degree; "do you have B.Tech Civil" is about the university, not the student
+            lo = max(0, m.start - 3)
+            before = {t for i, t in enumerate(tokens[lo: m.start], lo)
+                      if not (t in ("have", "had") and i > 0 and tokens[i - 1] in ("you", "u", "we"))}
+            if m.level in ("12th", "diploma"):
                 m.role = "qualification"
+            elif m.level in FLEX_LEVELS:
+                # "fee for BCA" asks about the programme; "I did BCA" / "after BCA" is the student's degree
+                if before & QUAL_CUES or m.program is None:
+                    m.role = "qualification"
+                elif before & TARGET_CUES:
+                    m.role = "target"
+                else:
+                    m.role, m.ambiguous = "qualification", True
             elif before & QUAL_CUES and not (set(tokens[max(0, m.start - 1): m.start]) & {"for", "into", "join"}):
                 m.role = "qualification"
             elif before & TARGET_CUES:
@@ -427,6 +470,18 @@ class EntityExtractor:
                     or alias in ("management", "school of management", "research centre")):
                 ent.department = dept
                 break
+
+        # academic season: "2023-24" as written, or "2023" = the batch that graduated in 2023 (2022-23)
+        m = re.search(r"\b(20\d{2})\s+(?:to\s+)?(\d{2}|20\d{2})\b", text)
+        if m and int(m.group(2)[-2:]) == (int(m.group(1)) + 1) % 100:
+            ent.year = f"{m.group(1)}-{m.group(2)[-2:]}"
+        elif m := re.search(r"\b(20\d{2})\b", text):
+            y = int(m.group(1))
+            ent.year = f"{y - 1}-{y % 100:02d}"
+
+        # university offices and certificates (longest alias first, so "exam cell" beats "cell")
+        ent.office = next((o for a, o in self.office_alias if re.search(rf"\b{re.escape(a)}\b", text)), None)
+        ent.certificate = next((c for a, c in self.cert_alias if re.search(rf"\b{re.escape(a)}\b", text)), None)
 
         for fac, pat in FACILITIES.items():
             if re.search(rf"\b(?:{pat})\b", text):
@@ -473,4 +528,12 @@ class EntityExtractor:
         ent.sports = bool(re.search(r"\b(?:sports? (?:quota|scholarship)|state level|national level|"
                                     r"district level|sportsperson|athlete|player)\b", text))
         ent.sibling = bool(re.search(r"\b(?:sibling|brother|sister)\b", text))
+
+        # "BCA fee?" - a degree with no cue word and no marks is the programme being asked about
+        own = [m for m in ent.degrees if m.qualification]
+        if (ent.program is None and len(own) == 1 and own[0].ambiguous and own[0].program
+                and ent.percentage is None and ent.cgpa is None):
+            ent.program = own[0].program
+            ent.ambiguous_qualification = ent.qualification
+            ent.qualification = None
         return ent

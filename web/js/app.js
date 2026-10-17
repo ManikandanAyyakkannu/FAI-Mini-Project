@@ -1,8 +1,7 @@
-// Page logic: shows the conversation and the "How I answered" panel.
+// Page logic: shows the conversation, the sample questions and the guided demos.
 // All the AI work happens in chatbot.js - this file only deals with the screen.
 
-import { loadChatbot, newSession, SOURCES } from "./chatbot.js";
-import { qualificationLabel } from "./nlp.js";
+import { loadChatbot, newSession } from "./chatbot.js";
 
 const $ = id => document.getElementById(id);
 const messagesEl = $("messages");
@@ -11,61 +10,67 @@ const sendBtn = $("send");
 
 // sample questions in the sidebar
 const SAMPLES = {
-  "Programmes & fees": [
+  "Admissions & programmes": [
     "What is the fee for B.Tech CSE?",
-    "How long is M.Tech AI?",
-    "Which PG courses do you offer?",
-  ],
-  "Eligibility & scholarships": [
     "I completed B.E ECE with 72%. Am I eligible for M.Tech AI?",
     "I scored 93% in 12th, what will be my fee for B.Tech CSE?",
-    "Am I eligible for MBA?",
+    "Do you have BBA?",
   ],
-  "Campus & admissions": [
+  "Academics & exams": [
+    "When does the semester start?",
+    "When are the end semester exams?",
+    "What is the grading system?",
+    "How do I apply for revaluation?",
+  ],
+  "Student services": [
+    "How do I get a bonafide certificate?",
+    "How do I pay my semester fee?",
+    "Where is the exam cell?",
+    "When is the tech fest?",
+  ],
+  "Departments & campus": [
+    "Who is the HOD of the AI department?",
+    "How many students study here?",
+    "What were the placements in 2023?",
     "hostle fees?",
-    "Who is the HOD of ECE?",
-    "Last date to apply for MBA?",
-    "Is the campus ragging free?",
   ],
-  "Outside the university": [
+  "Things I don't cover": [
+    "Is there a Civil Engineering department?",
+    "Who is the HOD of CSE in SRM University?",
     "What is the weather today?",
   ],
 };
 
 // cards on the welcome screen
 const TOPICS = [
-  ["Fees & courses", "What is the fee for M.Tech AI?"],
-  ["Eligibility check", "I have 7.2 CGPA in BCA. Am I eligible for MBA?"],
-  ["Scholarship calculator", "I scored 96% in 12th and I am a state level athlete. What will my fee be for B.Tech CSE?"],
+  ["Admissions", "I have 7.2 CGPA in BCA. Am I eligible for MBA?"],
+  ["Exams & results", "When will the semester results be published?"],
+  ["Certificates", "How do I get my transcript?"],
   ["Campus life", "Tell me about the hostel"],
 ];
 
-// scripted conversations for the presentation (also opened with ?demo=1 or ?demo=2)
+// scripted conversations for the presentation (also opened with ?demo=1, ?demo=2 or ?demo=3)
 const DEMOS = {
   1: ["What is the fee for M.Tech AI?", "How long is it?", "I completed B.E ECE with 72%. Am I eligible for M.Tech AI?"],
   2: ["Am I eligible for MBA?", "I have 7.2 CGPA in BCA", "I scored 93% in 12th, what will be my fee for B.Tech CSE?"],
+  3: ["When are the end semester exams?", "Which office handles it?", "How do I get a bonafide certificate?",
+      "Who is the HOD of the Civil department?"],
 };
 
 // short programme names for the follow-up chips
 const SHORT_NAMES = { btech_cse: "B.Tech CSE", btech_aids: "B.Tech AI & DS", btech_ece: "B.Tech ECE", btech_mech: "B.Tech Mechanical",
-  mtech_ai: "M.Tech AI", mtech_ds: "M.Tech Data Science", mba: "MBA", mca: "MCA", phd: "Ph.D" };
-
-const ENTITY_LABELS = {
-  program: "Programme", qualification: "Qualification", department: "Department", facility: "Facility",
-  percentage: "Percentage", cgpa: "CGPA", exam: "Entrance exam", category: "Category", subjects: "Subjects",
-  sports: "Sports quota", sibling: "Sibling", levelFilter: "Level",
-};
+  mtech_ai: "M.Tech AI", mtech_ds: "M.Tech Data Science", mba: "MBA", mca: "MCA", phd: "Ph.D",
+  bsc_cs: "B.Sc Computer Science", bca: "BCA", bsc_maths: "B.Sc Maths", bcom: "B.Com", bba: "BBA",
+  ba_english: "B.A. English", ba_economics: "B.A. Economics", mba_ba: "MBA Business Analytics",
+  mba_finance: "MBA Finance", mcom: "M.Com", ma_english: "M.A. English" };
 
 let bot = null;
 let session = newSession();
 let busy = false;
-let counter = 0;
-const answers = new Map();     // message id -> { resp, question }
 
 // ------------------------------------------------------------- helpers
 const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const wait = ms => new Promise(r => setTimeout(r, ms));
-const ms = t => (t < 0.1 ? "< 0.1 ms" : `${t.toFixed(1)} ms`);
 
 // the bot writes plain text; turn "  - item" lines into lists and highlight a few things
 function formatAnswer(text) {
@@ -100,17 +105,6 @@ function programLabel(pid) {
   return bot.answers.name(pid);
 }
 
-function entityValue(key, value) {
-  if (key === "program") return programLabel(value);
-  if (key === "qualification") return qualificationLabel(value);
-  if (key === "department" || key === "facility") return bot.kb.get(value, "name", value);
-  if (key === "percentage") return `${value}%`;
-  if (key === "exam" || key === "category") return String(value).toUpperCase();
-  if (key === "subjects") return value.join(", ").toUpperCase();
-  if (value === true) return "yes";
-  return String(value);
-}
-
 // ------------------------------------------------------------- messages
 function addUser(text) {
   messagesEl.querySelector(".welcome")?.remove();
@@ -121,37 +115,26 @@ function addUser(text) {
 
 function showTyping() {
   messagesEl.insertAdjacentHTML("beforeend",
-    `<div class="msg bot typing" id="typing"><div class="bot-avatar">G</div><div class="bubble"><span></span><span></span><span></span></div></div>`);
+    `<div class="msg bot typing" id="typing"><div class="bot-avatar">AI</div><div class="bubble"><span></span><span></span><span></span></div></div>`);
   scrollDown();
 }
 
-function addBot(resp, question) {
+function addBot(resp) {
   $("typing")?.remove();
-  const id = `m${++counter}`;
-  answers.set(id, { resp, question });
-  const rules = resp.trace.filter(l => l.startsWith("[")).length;
-  const label = SOURCES[resp.source] + (rules ? ` · ${rules} rules` : "");
   messagesEl.insertAdjacentHTML("beforeend", `
-    <div class="msg bot" data-id="${id}">
-      <div class="bot-avatar">G</div>
-      <div class="bubble">
-        ${formatAnswer(resp.text)}
-        <div class="answer-meta">
-          <button class="tag" data-src="${resp.source}" data-id="${id}" title="Show how this answer was produced">${label}</button>
-          <span class="time">${ms(resp.latencyMs)}</span>
-        </div>
-      </div>
+    <div class="msg bot">
+      <div class="bot-avatar">AI</div>
+      <div class="bubble">${formatAnswer(resp.text)}</div>
     </div>`);
   scrollDown();
-  return id;
 }
 
 function showWelcome() {
   messagesEl.innerHTML = `
     <div class="welcome">
       <div class="logo"><svg viewBox="0 0 64 64"><path d="M32 14 8 26l24 12 20-10v14h4V26z" fill="currentColor" stroke="none"/><path d="M18 34v10c0 4 7 8 14 8s14-4 14-8V34l-14 7z" fill="currentColor" stroke="none" opacity=".55"/></svg></div>
-      <h1>Hi! How can I help with your admission?</h1>
-      <p>Ask me about programmes, fees, eligibility, deadlines, documents, hostel, scholarships or placements. I can also check whether you are eligible and work out your fee after the scholarship.</p>
+      <h1>Welcome to AI University! How can I help?</h1>
+      <p>Ask me anything about the university: admissions and programmes, fees, exams and results, the academic calendar, certificates, university offices, hostel, placements or events. I can also check whether you are eligible for a programme and work out your fee after the scholarship.</p>
       <div class="topics">
         ${TOPICS.map(([title, q]) => `<div class="topic" role="button" tabindex="0" data-q="${escapeHtml(q)}"><b>${title}</b><span>${escapeHtml(q)}</span></div>`).join("")}
       </div>
@@ -169,86 +152,12 @@ function updateSuggestions(resp) {
   } else if (pid) {
     const name = SHORT_NAMES[pid] || programLabel(pid);
     chips = ["How long is it?", "How many seats?", `Who is the HOD for ${name}?`, `Am I eligible for ${name}?`];
-    if (pid !== "phd") chips.splice(3, 0, "What about placements?");     // no placement data for research
+    // only offer placements where the department publishes figures
+    if (bot.kb.get(bot.kb.get(pid, "department"), "placement")) chips.splice(3, 0, "What about placements?");
   } else if (resp) {
     chips = ["What courses do you offer?", "What scholarships are available?", "How do I apply?"];
   }
   $("suggestions").innerHTML = chips.map(c => `<button class="chip">${escapeHtml(c)}</button>`).join("");
-}
-
-// ------------------------------------------------------------- explanation panel
-function renderExplain(id) {
-  const item = answers.get(id);
-  if (!item) return;
-  const { resp, question } = item;
-  document.querySelectorAll(".msg.bot.selected").forEach(el => el.classList.remove("selected"));
-  document.querySelector(`.msg.bot[data-id="${id}"]`)?.classList.add("selected");
-
-  const rules = resp.trace.filter(l => l.startsWith("[")).map(l => {
-    const [, rid, text] = l.match(/^\[(\w+)\] (.*)$/);
-    return { rid, text };
-  });
-  const notes = resp.trace.filter(l => /^(Dialogue|Assumption|Slot filling|Domain gate|Vector store|Frame lookup|Semantic network|Reasoning)/.test(l));
-  const entities = Object.entries(resp.entities || {});
-  const maxScore = Math.max(1, ...resp.topIntents.map(([, s]) => s));
-  const corrections = Object.entries(resp.corrections);
-
-  $("explainBody").innerHTML = `
-    <div class="ex-question">For the question <q>${escapeHtml(question)}</q></div>
-
-    <section class="ex-section">
-      <h3>Summary</h3>
-      <dl class="facts">
-        <dt>Intent</dt><dd><code>${resp.intent}</code></dd>
-        <dt>Confidence</dt><dd>${resp.confidence.toFixed(2)}</dd>
-        <dt>Answered by</dt><dd><span class="tag" data-src="${resp.source}">${SOURCES[resp.source]}</span></dd>
-        <dt>Time</dt><dd>${ms(resp.latencyMs)}</dd>
-      </dl>
-    </section>
-
-    <section class="ex-section">
-      <h3>Intent scores (top 3)</h3>
-      <div class="bars">
-        ${resp.topIntents.map(([name, s], i) => `
-          <div class="bar-row ${i === 0 ? "win" : ""}"><code>${name}</code>
-            <div class="bar"><i style="width:${Math.max(2, 100 * s / maxScore)}%"></i></div><span>${s.toFixed(2)}</span></div>`).join("")}
-      </div>
-    </section>
-
-    ${rules.length ? `
-    <section class="ex-section">
-      <h3>Rules fired (forward chaining)</h3>
-      <ol class="rules">
-        ${rules.map(r => `<li class="${r.text.startsWith("Conclusion") || r.rid === "S9" ? "conclusion" : ""}"><span class="rule-id">${r.rid}</span><span>${escapeHtml(r.text)}</span></li>`).join("")}
-      </ol>
-    </section>` : ""}
-
-    ${entities.length ? `
-    <section class="ex-section">
-      <h3>Details picked from the question</h3>
-      <div class="chips">${entities.map(([k, v]) => `<span class="kv">${ENTITY_LABELS[k] || k}: <b>${escapeHtml(entityValue(k, v))}</b></span>`).join("")}</div>
-    </section>` : ""}
-
-    ${notes.length ? `
-    <section class="ex-section">
-      <h3>Decisions along the way</h3>
-      <div class="pipeline">${notes.map(n => `<div>${escapeHtml(n)}</div>`).join("")}</div>
-    </section>` : ""}
-
-    <section class="ex-section">
-      <h3>Language processing</h3>
-      <div class="pipeline">
-        <div><span>Normalised text</span><code>${escapeHtml(resp.normalised || "-")}</code></div>
-        <div><span>Key words (after stop words, synonyms, stemming)</span><code>${escapeHtml(resp.lemmas.join(" ") || "-")}</code></div>
-        ${corrections.length ? `<div><span>Spelling corrected</span>${corrections.map(([a, b]) => `<code>${escapeHtml(a)} → ${escapeHtml(b)}</code>`).join(" ")}</div>` : ""}
-      </div>
-    </section>
-
-    <section class="ex-section">
-      <details class="trace"><summary>Full trace (${resp.trace.length} steps)</summary>
-        <ol>${resp.trace.map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ol>
-      </details>
-    </section>`;
 }
 
 // ------------------------------------------------------------- asking
@@ -262,8 +171,7 @@ async function ask(text) {
   showTyping();
   await wait(350 + Math.min(text.length * 6, 450));     // a short pause so the reply feels natural
   const resp = bot.respond(text, session);
-  const id = addBot(resp, text);
-  renderExplain(id);
+  addBot(resp);
   updateSuggestions(resp);
   busy = false;
   setInputEnabled(true);
@@ -281,10 +189,8 @@ async function playDemo(n) {
 
 function resetChat() {
   session = newSession();
-  answers.clear();
   showWelcome();
   updateSuggestions(null);
-  $("explainBody").innerHTML = `<div class="empty-note">Ask a question. This panel shows what the bot understood, which part of the system answered, and which rules fired.</div>`;
 }
 
 function setInputEnabled(on) {
@@ -295,7 +201,6 @@ function setInputEnabled(on) {
 // ------------------------------------------------------------- drawers (small screens)
 function closeDrawers() {
   $("sidebar").classList.remove("open");
-  $("explain").classList.remove("open");
   $("scrim").classList.remove("show");
 }
 function openDrawer(id) {
@@ -338,7 +243,6 @@ document.addEventListener("click", e => {
   if (!t) return;
   if (t.matches(".sample, .chip")) ask(t.textContent);
   else if (t.matches(".topic")) ask(t.dataset.q);
-  else if (t.matches(".tag[data-id]")) { renderExplain(t.dataset.id); openDrawerIfNarrow(); }
   else if (t.dataset.demo) playDemo(t.dataset.demo);
 });
 document.addEventListener("keydown", e => {
@@ -347,14 +251,9 @@ document.addEventListener("keydown", e => {
     ask(e.target.dataset.q);
   }
 });
-function openDrawerIfNarrow() {
-  if (window.matchMedia("(max-width: 1180px)").matches) openDrawer("explain");
-}
 
 $("newChat").addEventListener("click", () => { if (!busy) { resetChat(); closeDrawers(); } });
 $("openSidebar").addEventListener("click", () => openDrawer("sidebar"));
-$("openExplain").addEventListener("click", () => openDrawer("explain"));
-$("closeExplain").addEventListener("click", closeDrawers);
 $("scrim").addEventListener("click", closeDrawers);
 $("openAbout").addEventListener("click", () => $("about").showModal());
 $("about").addEventListener("click", e => { if (e.target === $("about")) $("about").close(); });

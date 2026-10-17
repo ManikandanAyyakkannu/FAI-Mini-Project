@@ -34,9 +34,42 @@ PERSONAL_RE = re.compile(r"\b(am i|can i|could i|will i|would i|do i|i have|i've
 GENERIC_WORDS = {"what", "how", "who", "which", "when", "why", "have", "good", "take", "much", "many",
                  "s", "per", "under", "kind", "like", "best", "help", "give", "make", "show", "list",
                  "anyone", "all", "there", "well", "one", "need", "provide", "available"}
-FALLBACK_TEXT = ("Sorry, I could not find an answer to that. I can help with programmes, fees, eligibility, "
-                 "admissions, deadlines, documents, hostel, scholarships, placements and campus facilities. "
-                 "For anything else please contact the admissions office at +91 44 2345 6789.")
+# "hi, do you have seats in medical?" - a greeting in front of a real question
+GREETING_RE = re.compile(r"^\s*(?:hi+|hai|hey+|hello+|helo|good (?:morning|afternoon|evening)|namaste|vanakkam|greetings)\b"
+                         r"[\s,.!:;-]*(?:(?:sir|madam|mam|there|team|bot|all)\b[\s,.!:;-]*)?", re.I)
+# the user says the last answer was not useful
+COMPLAINT_RE = re.compile(r"\b(?:not (?:relevant|relavant|correct|right|helpful|useful|related|clear)|irrelevant|irrelavant|"
+                          r"wrong (?:answer|reply|response|information|info)|(?:is|are|was|were) wrong|useless|"
+                          r"does not make sense|doesn t make sense|did not (?:answer|understand)|didn t (?:answer|understand)|"
+                          r"not what i asked|you (?:are|r) wrong)\b")
+# words around "department" that are not a department's name
+NOT_A_DEPT = {"the", "of", "which", "what", "your", "this", "that", "each", "all", "every", "hod", "head", "who", "is",
+              "a", "an", "any", "in", "for", "about", "tell", "me", "details", "info", "information", "name", "list",
+              "ai", "university", "college", "our", "my", "whose", "and", "or", "to", "there", "do", "you",
+              "have", "has", "are", "where", "how", "many", "contact", "email", "phone", "number", "s"}
+# intents whose topic is decided by a named office or certificate
+PASS_RE = re.compile(r"\b(?:pass mark|pass marks|passing mark|passing marks|to pass (?:a|the|each|my|in)?\s*(?:subject|course|paper|exam))")
+PAYMENT_RE = re.compile(r"\b(?:late|due|draft|upi|net banking|online|instal+ments?|receipt|reciept|portal|card|two parts)\b")
+VC_RE = re.compile(r"\b(?:vice chancellor|vc)\b")
+# who to contact for each topic (the office frame that handles it)
+TOPIC_OFFICE = {"hostel": "office_hostel", "placement": "office_placement", "examination": "office_coe",
+                "results": "office_coe", "fee_payment": "office_accounts", "certificates": "office_registrar",
+                "events": "office_dsw", "admission_process": "office_admissions"}
+CONTACT_WORDS = {"contact", "whom", "office", "phone", "email", "handle", "responsible", "incharge"}
+ENTITY_CONFIDENCE = 0.6      # a named office / certificate is strong evidence for its topic
+OFFICE_OR_CERT_INTENTS = {"office_info", "certificates", "contact", "out_of_scope", "about_university"}
+STUDENT_COUNT_RE = re.compile(r"\b(?:how many|number of|no of|total|strength|count|enrolment|enrollment)\b")
+SEAT_STATUS_RE = re.compile(r"\b(?:available|availability|open|vacant|vacancy|vacancies|left|remaining|still|empty|free)\b")
+AVAILABILITY_RE = re.compile(r"\b(?:do you (?:have|offer)|do we have|is there|are there|offered|available|"
+                             r"tell me about)\b")
+# words that can stand before "university" without naming another institution ("the university", "this university")
+NOT_A_NAME = {"the", "this", "that", "your", "our", "my", "their", "its", "a", "an", "ai", "which", "what",
+              "whose", "any", "same", "other", "another", "good", "best", "top", "great", "famous", "deemed",
+              "private", "government", "state", "central", "open", "nearby", "near", "whole", "entire", "new", "old",
+              "of", "for", "about", "in", "at", "to", "from", "and", "or", "is", "s", "each", "every", "one", "no"}
+FALLBACK_TEXT = ("Sorry, I could not find an answer to that. I can help with admissions, programmes, fees, exams and "
+                 "results, the academic calendar, certificates, university offices, hostel, scholarships, placements, "
+                 "events and campus facilities. For anything else please call the university at +91 44 2345 6789.")
 
 
 @dataclass
@@ -69,6 +102,15 @@ class UniversityChatbot:
         for aliases in self.kb.program_aliases.values():
             for a in aliases:
                 self.pre.add_vocabulary(a.split())
+        # names the closed-world checks look for must not be "corrected" into other words
+        for item in self.kb.not_offered:
+            for a in item["aliases"]:
+                self.pre.add_vocabulary(a.split())
+        for name in self.kb.other_institutions:
+            self.pre.add_vocabulary(name.split())
+        for aliases in list(self.kb.office_aliases.values()) + list(self.kb.certificate_aliases.values()):
+            for a in aliases:
+                self.pre.add_vocabulary(a.split())
         if not use_spell_correction:
             self.pre.correct = lambda toks: (toks, {})
         self.extractor = EntityExtractor(self.kb)
@@ -85,6 +127,14 @@ class UniversityChatbot:
         texts += [f["question"] for f in self.faq]
         texts += [a for al in self.kb.program_aliases.values() for a in al]
         self.domain_vocab = {lem for t in texts for lem in self.pre.process(t).lemmas} - GENERIC_WORDS
+        # words of greetings / thanks / goodbye, so "list all departments" is not mistaken for "that's all"
+        talk = [t for n in SMALLTALK for t in self.classifier.intents[n]["examples"] + self.classifier.intents[n]["keywords"]]
+        self.smalltalk_vocab = {lem for t in talk for lem in self.pre.process(t).lemmas}
+        # closed-world knowledge, longest names first so "anna university" wins over shorter matches
+        self.other_names = sorted(self.kb.other_institutions.items(), key=lambda x: -len(x[0]))
+        self.not_offered = [(a, item["name"], item.get("unless", []))
+                            for item in self.kb.not_offered for a in item["aliases"]]
+        self.not_offered.sort(key=lambda x: -len(x[0]))
         self.use_reasoning = use_reasoning
         self.use_context = use_context
         self.use_vector_fallback = use_vector_fallback
@@ -97,7 +147,15 @@ class UniversityChatbot:
     def respond(self, message: str, session: Session | None = None) -> BotResponse:
         t0 = time.perf_counter()
         session = session if session is not None else Session()
-        resp = self._respond(message, session)
+        # "hi, what is the fee for MBA?": answer the question and just say hello back
+        greet = GREETING_RE.match(message)
+        rest = message[greet.end():].strip() if greet else ""
+        if rest and set(self.pre.process(rest).lemmas) & self.domain_vocab:
+            resp = self._respond(rest, session)
+            resp.text = "Hello! " + resp.text
+            resp.trace.insert(0, f"Greeting '{greet.group(0).strip()}' noted; answering the rest: '{rest}'")
+        else:
+            resp = self._respond(message, session)
         resp.latency_ms = (time.perf_counter() - t0) * 1000
         session.history.append((message, resp.text))
         if resp.entities.get("program") in self.kb.programs:
@@ -109,8 +167,13 @@ class UniversityChatbot:
     def _respond(self, message: str, session: Session) -> BotResponse:
         p = self.pre.process(message)
         ents = self.extractor.extract(p.normalised, p.lemmas)
-        intent, conf, _ = self.classifier.predict(p)
+        intent, conf, scores = self.classifier.predict(p)
         trace = [f"Normalised text: '{p.normalised}'", f"Lemmas: {p.lemmas}"]
+        # small talk only wins when the message has no university words in it
+        if intent in SMALLTALK and (set(p.lemmas) & self.domain_vocab) - self.smalltalk_vocab:
+            best = max((n for n in scores if n not in SMALLTALK), key=scores.get)
+            intent, conf = (best if scores[best] >= self.classifier.threshold else "out_of_scope"), scores[best]
+            trace.append("Small talk skipped: the message also contains university words")
         if p.corrections:
             trace.append(f"Spelling corrected: {p.corrections}")
         trace.append(f"Intent classifier -> {intent} (score {conf:.2f})")
@@ -122,6 +185,24 @@ class UniversityChatbot:
         applicant = {"qualification": ents.qualification, "percentage": ents.percentage, "cgpa": ents.cgpa,
                      "exam": ents.exam, "category": ents.category, "subjects": ents.subjects,
                      "sports": ents.sports, "sibling": ents.sibling}
+        # ---- 0. the user says the last answer did not help
+        if COMPLAINT_RE.search(TextPreprocessor.normalise(message)) and not (
+                ents.program or ents.department or ents.facility or ents.has_applicant_facts):
+            trace.append("Feedback: the user says the previous answer was not useful")
+            return BotResponse(self._complaint_text(), "out_of_scope", conf, "feedback", "smalltalk", {}, trace)
+
+        # a question about another university: we only know AI University, so do not guess
+        if intent not in SMALLTALK and (other := self._other_institution(message)):
+            trace.append(f"Closed world: '{other}' is another institution, not in the knowledge base")
+            return BotResponse(self._other_institution_text(other), "out_of_scope", conf, "other_institution",
+                               "fallback", ents.as_dict(), trace)
+
+        # a bare degree ("BCA") right after the bot asked for the student's qualification is their degree
+        if (session.pending and session.pending["program"] and ents.ambiguous_qualification
+                and ents.program and not ents.qualification):
+            ents.qualification, ents.program = ents.ambiguous_qualification, None
+            applicant["qualification"] = ents.qualification
+            trace.append(f"Dialogue: '{ents.qualification}' answers the question about your qualification")
         has_facts = ents.has_applicant_facts or ents.sports or ents.sibling
 
         # ---- 1. finish a pending task (multi-turn slot filling)
@@ -138,6 +219,14 @@ class UniversityChatbot:
                 return self._eligibility(pid, merged, session, trace, conf)
             return self._fee_calc(pid, merged, session, trace, conf)
 
+        # ---- 1b. a department / programme that is not in the knowledge base (closed-world assumption)
+        if intent not in SMALLTALK and (missing := self._not_offered(p.normalised, ents)):
+            alias, name = missing
+            trace.append(f"Closed world: '{alias}' is not a department or programme in the knowledge base")
+            return BotResponse(self._not_offered_text(name), intent if intent != "out_of_scope" else "department_info",
+                               conf, "not_offered:" + name.lower().replace(" ", "_"), "knowledge_base",
+                               ents.as_dict(), trace)
+
         # ---- 2. personalised questions -> rule-based reasoning
         if self.use_reasoning:
             money = intent in ("program_fee", "scholarship") or {"fee", "scholarship"} & lemmas
@@ -151,11 +240,29 @@ class UniversityChatbot:
                     trace.append("Reasoning: personal eligibility question -> eligibility rules")
                     return self._eligibility(pid, applicant, session, trace, conf)
 
+        # ---- 2b. "how many students study here?": the University frame's 'students' slot
+        if (STUDENT_COUNT_RE.search(p.normalised) and re.search(r"\bstudents?\b", p.normalised)
+                and not (ents.program or ents.department or ents.facility or has_facts)):
+            trace.append("Frame lookup: University.students")
+            return BotResponse(self.answers.student_strength(), "about_university", conf, "about_university:students",
+                               "knowledge_base", ents.as_dict(), trace)
+
+        # ---- 2c. "number of departments", "list the departments": the list of departments
+        if re.search(r"\bdepartments\b", p.normalised) and not (ents.program or ents.department or has_facts):
+            trace.append("Question about the departments in general -> list of departments")
+            text, key = self._kb_answer("department_info", ents, p, trace)
+            return BotResponse(text, "department_info", conf, key, "knowledge_base", ents.as_dict(), trace)
+
         # ---- 3. dialogue context (coreference: "its fee", "what about MCA?")
         if self.use_context:
             last = session.context.get("last_intent")
+            # "what about 2023?" right after a placement question
+            if ents.year and last == "placement" and (intent == "out_of_scope" or conf < 0.42) and len(p.lemmas) <= 4:
+                trace.append("Dialogue: follow-up about another year -> reusing the previous intent 'placement'")
+                intent, conf = last, max(conf, ENTITY_CONFIDENCE)
+            # a short follow-up ("and MBA?") - but "do you have BBA?" is a new question, not a follow-up
             if ents.program and last in PROGRAM_INTENTS and (intent == "out_of_scope" or conf < 0.42) \
-                    and len(p.lemmas) <= 4:
+                    and len(p.lemmas) <= 4 and not AVAILABILITY_RE.search(p.normalised):
                 trace.append(f"Dialogue: elliptical follow-up -> reusing previous intent '{last}'")
                 intent = last
             if intent in PROGRAM_INTENTS and not ents.program and not ents.department \
@@ -163,9 +270,67 @@ class UniversityChatbot:
                 ents.program = session.context["program"]
                 trace.append(f"Dialogue: programme taken from context -> {ents.program}")
 
+        # "where is the DS department?" / "email of the CSE department": that department's own details
+        if intent == "contact" and ents.department:
+            trace.append(f"Contact question about a department -> details of {ents.department}")
+            intent = "department_info"
+
+        # ---- 3c. topics of current students that the classifier mixes up with admission topics
+        words = set(p.lemmas)
+        # "when does the semester start?" is about the academic calendar, not the admission deadline;
+        # "when do the end sem exams start?" is about the exams
+        if intent in ("admission_deadline", "academic_calendar") and {"semester", "class", "college", "reopen"} & words \
+                and not {"apply", "admission", "register", "deadline", "entrance"} & words:
+            intent = "examination" if "exam" in words else "academic_calendar"
+            trace.append(f"Question about the semester, not about applying -> {intent}")
+        # "minimum marks to pass a subject" is an exam rule, not admission eligibility
+        if PASS_RE.search(p.normalised) and not (ents.program or has_facts):
+            trace.append("Pass marks of a course -> examination")
+            intent = "examination"
+        # "can I pay the fees by demand draft / late?" is about paying, not about how much a programme costs
+        if intent in ("program_fee", "out_of_scope") and not ents.program and PAYMENT_RE.search(p.normalised) \
+                and ("fee" in words or "pay" in p.tokens):
+            trace.append("Question about paying fees -> fee_payment")
+            intent = "fee_payment"
+        # "who is the VC?"
+        if VC_RE.search(p.normalised) and not ents.office:
+            trace.append("Frame lookup: University.vice_chancellor")
+            return BotResponse(self.answers.vice_chancellor(), "office_info", conf, "office_info:vice_chancellor",
+                               "knowledge_base", ents.as_dict(), trace)
+        # "whom should I contact for a hostel room change?" / "which office handles it?":
+        # the office responsible for the topic (the topic of this question, or of the previous one)
+        if not ents.office and CONTACT_WORDS & words:
+            topic = intent if intent in TOPIC_OFFICE else (
+                session.context.get("last_intent") if intent in ("out_of_scope", "office_info", "contact") else None)
+            if topic in TOPIC_OFFICE:
+                ents.office = TOPIC_OFFICE[topic]
+                trace.append(f"Semantic network: {topic} --handled by--> {ents.office}")
+                intent, conf = "office_info", max(conf, ENTITY_CONFIDENCE)
+
+        # a named certificate or office decides the topic ("TC", "exam cell"), whatever the classifier guessed
+        if ents.certificate and intent in OFFICE_OR_CERT_INTENTS | {"documents_required", "admission_process", "office_info"}:
+            if intent != "certificates":
+                trace.append(f"Certificate mentioned ({ents.certificate}) -> certificates")
+            intent, conf = "certificates", max(conf, ENTITY_CONFIDENCE)
+        elif ents.office and intent in OFFICE_OR_CERT_INTENTS | {"hostel", "placement", "facility", "department_info"} \
+                and not (ents.office == "office_admissions" and intent == "contact"):
+            if intent != "office_info":
+                trace.append(f"University office mentioned ({ents.office}) -> office_info")
+            intent, conf = "office_info", max(conf, ENTITY_CONFIDENCE)
+
+        # ---- 3b. "do you have BBA?" / "tell me about BBA": a short summary of that programme
+        pid = ents.program
+        if (pid in self.kb.programs and not has_facts and intent in ("out_of_scope", "program_list", "about_university")
+                and (ask := AVAILABILITY_RE.search(p.normalised))):
+            trace.append(f"Knowledge base lookup: summary of programme '{pid}'")
+            return BotResponse(self.answers.program_info(pid, confirm=ask.group(0) != "tell me about"), "program_list",
+                               conf, f"program_info:{pid}", "knowledge_base", ents.as_dict(), trace)
+
         # ---- 4a. domain-relevance gate: no known domain word and no entity -> out of scope
         known = set(p.lemmas) & self.domain_vocab
-        if not known and not (ents.program or ents.department or ents.facility or has_facts):
+        pure_talk = intent in SMALLTALK and set(p.lemmas) <= self.smalltalk_vocab     # "that's all", "thanks a lot"
+        if not known and not pure_talk and not (ents.program or ents.department or ents.facility or ents.office
+                                                or ents.certificate or has_facts or (ents.year and intent == "placement")):
             trace.append("Domain gate: no university-related word found -> out of scope")
             return BotResponse(FALLBACK_TEXT, "out_of_scope", conf, "fallback", "fallback", ents.as_dict(), trace)
 
@@ -173,6 +338,9 @@ class UniversityChatbot:
         #          free-text FAQ passage (a topic with no frame in the KB) matches strongly
         if self.use_vector_fallback and intent not in SMALLTALK:
             hits = self.store.search(p.normalised, k=3)
+            if ents.program in self.kb.programs:          # "students in MBA" must not become "seats in MBA Finance"
+                hits = [h for h in hits if h.metadata["key"].partition(":")[2] in ("", ents.program)
+                        or h.metadata["key"].partition(":")[2] not in self.kb.programs]
             top = hits[0] if hits else None
             free_text_wins = (top is not None and top.metadata["intent"] == "faq"
                               and top.score >= 0.5 and top.score > conf)
@@ -193,6 +361,69 @@ class UniversityChatbot:
             return self._eligibility(ents.program, applicant, session, trace, conf)
         text, key = self._kb_answer(intent, ents, p, trace)
         return BotResponse(text, intent, conf, key, "knowledge_base", ents.as_dict(), trace)
+
+    # ======================================================= closed world
+    def _other_institution(self, message: str) -> str | None:
+        """Name of another university/college mentioned in the message, if any."""
+        text = TextPreprocessor.normalise(message)
+        for alias, name in self.other_names:
+            if re.search(rf"\b{re.escape(alias)}\b", text):
+                return name
+        m = re.search(r"\b([a-z]+) university\b", text)
+        if m and m.group(1) not in NOT_A_NAME:
+            return m.group(1).title() + " University"
+        return None
+
+    def _other_institution_text(self, name: str) -> str:
+        return (f"I can only answer questions about AI University, so I don't have information about {name}. "
+                f"Please check {name}'s official website or contact their admissions office.")
+
+    def _not_offered(self, text: str, ents) -> tuple[str, str] | None:
+        """A department or programme the university does not have, e.g. 'civil' or 'law'."""
+        for alias, name, unless in self.not_offered:
+            if not re.search(rf"\b{re.escape(alias)}\b", text):
+                continue
+            if any(re.search(rf"\b{re.escape(u)}\b", text) for u in unless):
+                continue                         # "medical facility" is about the campus, not a medical course
+            # read the question again without that word: if it still names something we do offer
+            # ("I did B.E Civil, can I join MBA?"), or the word was part of the student's own
+            # degree, this is not a question about the missing department
+            rest = self.extractor.extract(re.sub(rf"\b{re.escape(alias)}\b", " ", text))
+            if (rest.program and not rest.program.startswith("group")) or rest.department:
+                continue
+            if ents.qualification and rest.qualification != ents.qualification:
+                continue
+            return alias, name
+        return None
+
+    @staticmethod
+    def _unknown_department(text: str) -> str | None:
+        """The name in "<name> department" or "HOD of <name>", when the KB found no such department."""
+        m = (re.search(r"((?:[a-z]+ ){1,4})(?:department|dept)\b", text + " ")
+             or re.search(r"\b(?:hod|head) of ((?:[a-z]+ ?){1,4})$", text))
+        if not m:
+            return None
+        words = m.group(1).split()
+        name = []
+        for w in reversed(words):                 # keep the words right before "department"
+            if w in NOT_A_DEPT:
+                break
+            name.insert(0, w)
+        if not name:
+            return None
+        name = " ".join(name)
+        return name.upper() if len(name) <= 5 else name.title()
+
+    def _complaint_text(self) -> str:
+        u = self.kb.frames["University"]
+        return ("Sorry, that was not the answer you were looking for. I only know about AI University, so please "
+                "try asking in a different way, for example \"What is the fee for B.Tech CSE?\" or \"Who is the HOD of "
+                f"the ECE department?\". You can also contact the admissions office at {u['phone']} or {u['email']}.")
+
+    def _not_offered_text(self, name: str) -> str:
+        u = self.kb.frames["University"]
+        return (f"Sorry, the {name} department is not available at {u['name']}. For more details, please contact "
+                f"the admissions office at {u['phone']} or {u['email']}.")
 
     # ============================================================ KB lookup
     def _level(self, ents) -> str | None:
@@ -218,8 +449,13 @@ class UniversityChatbot:
                             "program_seats": "seats"}[intent]
                     val, src = self.kb.get_with_source(pid, slot)
                     trace.append(f"Frame lookup: {pid}.{slot} = {val} (from frame '{src}')")
-                return fn(pid), f"{intent}:{pid}"
-            return fn("all"), f"{intent}:all"
+            target = pid or "all"
+            text = fn(target)
+            # "are seats still open?": the KB knows the intake, not today's vacancies, so say so
+            if intent == "program_seats" and SEAT_STATUS_RE.search(p.normalised):
+                text += "\n" + A.seat_status(target)
+                trace.append("Seat availability asked: live vacancies are not in the knowledge base")
+            return text, f"{intent}:{target}"
         if intent == "eligibility":
             if pid:
                 return A.eligibility_info(pid), f"eligibility:{pid}"
@@ -245,21 +481,55 @@ class UniversityChatbot:
             return A.scholarship_info(), "scholarship"
         if intent == "placement":
             dept = ents.department or (self.kb.get(pid, "department") if pid and not pid.startswith("group") else None)
-            return A.placement(dept), f"placement:{dept or 'all'}"
+            year = ents.year
+            if not year and re.search(r"\b(?:last|previous) year\b", p.normalised):
+                year = A.placement_years()[-2]
+            if year:
+                trace.append(f"Placement season asked: {year} (seasons in the KB: {', '.join(A.placement_years())})")
+            return A.placement(dept, year), f"placement:{dept or 'all'}" + (f":{year}" if year else "")
         if intent == "department_info":
             dept = ents.department
             if pid and not pid.startswith("group") and (not dept or "offer" in p.lemmas):
                 dept = self.kb.get(pid, "department")
                 trace.append(f"Semantic network: {pid} --department--> {dept}")
-                if "offer" in p.lemmas or not ents.department:
+                # "which department offers M.Tech DS?" names the department; "HOD of DS dept" wants its details
+                if "offer" in p.lemmas or not (ents.department or {"hod", "department"} & set(p.lemmas)):
                     return A.department_of_program(pid), f"department_info:{dept}"
             if dept:
                 return A.department_info(dept), f"department_info:{dept}"
+            # "HOD of the XYZ department": a department we do not know is not offered (closed world)
+            if unknown := self._unknown_department(p.normalised):
+                trace.append(f"Closed world: no department called '{unknown}' in the knowledge base")
+                return self._not_offered_text(unknown), "not_offered:" + unknown.lower().replace(" ", "_")
             return "\n".join(A.department_info(d) for d in self.kb.instances_of("Department")), "department_info:all"
         if intent == "contact":
             return A.contact(), "contact"
         if intent == "about_university":
             return A.about(), "about_university"
+
+        # ---- university life beyond admissions
+        words = set(p.lemmas) | set(p.tokens)
+        if intent == "academic_calendar":
+            return A.academic_calendar(words), "academic_calendar"
+        if intent == "examination":
+            return A.examination(words), "examination"
+        if intent == "results":
+            return A.results(words), "results"
+        if intent == "fee_payment":
+            return A.fee_payment(words), "fee_payment"
+        if intent == "certificates":
+            trace.append(f"Frame lookup: {ents.certificate or 'all certificates'} (office from the Certificate class)")
+            return A.certificate(ents.certificate), f"certificates:{ents.certificate or 'all'}"
+        if intent == "office_info":
+            if not ents.office and {"vice", "chancellor", "vc"} & words:
+                return A.vice_chancellor(), "office_info:vice_chancellor"
+            return A.office(ents.office), f"office_info:{ents.office or 'all'}"
+        if intent == "faculty_research":
+            return A.faculty_research(words), "faculty_research"
+        if intent == "events":
+            return A.events(words), "events"
+        if intent == "alumni":
+            return A.alumni(), "alumni"
         return FALLBACK_TEXT, "fallback"
 
     # =========================================================== reasoning

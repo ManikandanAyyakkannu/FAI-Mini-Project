@@ -1,0 +1,21 @@
+id,conv_id,category,query,expected_intent,expected_key
+SH01,,calendar,When does the winter break start?,academic_calendar,academic_calendar
+SH02,,calendar,Is Independence Day a holiday?,academic_calendar,academic_calendar
+SH03,,calendar,What is the lunch break time?,academic_calendar,academic_calendar
+SH04,,exams,When will the exam timetable be released?,examination,examination
+SH05,,exams,How is the internal assessment done?,examination,examination
+SH06,,exams,What is the grade point for an A+?,examination,examination
+SH07,,results,How do I check my result?,results,results
+SH08,,results,What is the fee for supplementary exams?,results,results
+SH09,,fees_payment,Can I pay the semester fee using UPI?,fee_payment,fee_payment
+SH10,,fees_payment,Is it possible to pay tuition in two parts?,fee_payment,fee_payment
+SH11,,certificates,How long does it take to get a migration certificate?,certificates,certificates:cert_migration
+SH12,,certificates,I need a conduct certificate for a job,certificates,certificates:cert_conduct
+SH13,,certificates,How many days for a bonafide certificate?,certificates,certificates:cert_bonafide
+SH14,,offices,Who is the dean of students?,office_info,office_info:office_dsw
+SH15,,offices,Where is the placement cell?,office_info,office_info:office_placement
+SH16,,offices,email id of the exam cell,office_info,office_info:office_coe
+SH17,,research,How many patents has the university filed?,faculty_research,faculty_research
+SH18,,events,When is the sports meet?,events,events
+SH19,,events,When is the tech fest held?,events,events
+SH20,,alumni,Does the university have an alumni association?,alumni,alumni

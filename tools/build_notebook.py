@@ -15,7 +15,7 @@ md(r"""
 
 | | |
 |---|---|
-| **Team members** | Manikandan (Roll No. 35) · Manoj Kumar (Roll No. 05) · Dinakar (Roll No. 32) |
+| **Team members** | Manikandan Ayyakkannu (RA2612049015035) · Dinakar B (RA2612049015032) · Manoj Kumar R (RA2612049015005) |
 | **Technique** | Frame-based knowledge representation (semantic network) + production rules with forward chaining + an NLP pipeline + a vector-store retrieval fallback |
 | **Solution files** | this notebook · `chatbot/` package (Python engine) · `index.html` + `web/` (the chatbot website) · `data/` |
 | **Live chatbot** | https://manikandanayyakkannu.github.io/FAI-Mini-Project/ |
@@ -59,20 +59,27 @@ print("Python", sys.version.split()[0], "| pandas", pd.__version__, "| numpy", n
 md(r"""
 ## 1. Problem Definition
 
-Every admission season a university receives thousands of repetitive enquiries by phone, e-mail and at the front desk, such as
-*"What is the fee for B.Tech CSE?"*, *"Am I eligible for M.Tech AI with 6.8 CGPA?"*, *"When is the last date?"* and *"Is there a hostel?"*.
-Staff answer the same questions again and again. Answers are not available outside office hours and are sometimes inconsistent.
+A university answers thousands of repetitive enquiries every year, by phone, e-mail and at many different counters.
+Applicants ask *"What is the fee for B.Tech CSE?"* or *"Am I eligible for M.Tech AI with 6.8 CGPA?"*; current students ask
+*"When do the end-semester exams start?"*, *"How do I get a bonafide certificate?"* or *"Who should I contact about my hostel room?"*;
+alumni ask for transcripts. The answers are spread across the admissions office, the exam cell, the registrar, the accounts office and
+the departments, they are not available outside office hours, and they are sometimes inconsistent.
 
-**Goal:** build an intelligent enquiry chatbot that
+**Goal:** build one intelligent enquiry chatbot for the **whole university** that
 * understands free-form English questions, including paraphrases, abbreviations (*B.E*, *M.Tech*, *CGPA*) and spelling mistakes;
-* answers factual questions from a structured **knowledge base** of the (fictional) *Greenfield University*;
+* answers factual questions from a structured **knowledge base** of the (fictional) *AI University*: admissions and
+  programmes, fees, the academic calendar, exams and results, certificates, university offices, departments, hostel,
+  placements, events, research and alumni;
 * **reasons** about personal questions, such as eligibility for a programme or the fee after a scholarship, and **explains** each decision;
 * keeps track of the **conversation** (follow-up questions such as *"how long is it?"*) and asks for missing details;
 * answers free-text FAQs (ragging, Wi-Fi, refunds) through **semantic retrieval**, and politely refuses out-of-scope questions.
 
-**Scope and assumptions:** the knowledge base describes a fictional university with 9 programmes, 6 departments,
-5 facilities, an admission process and a scholarship policy. All data is synthetic and created only for this project.
-The chatbot is text-based, works in English and runs fully offline on a normal laptop.
+**Scope and assumptions:** the knowledge base describes a fictional university, *AI University*, with 20 programmes (engineering,
+arts, science, commerce and management), 11 departments, 9 university offices, 7 kinds of certificate, 5 facilities, the
+academic calendar, the examination rules, fee payment, events, research, alumni, the admission process and the scholarship policy.
+All data is synthetic and created only for this project. The chatbot is text-based, works in English and runs in any web browser.
+Anything that is not in the knowledge base (a department the university does not have, or another university) is
+answered with a polite "not available" instead of a guess.
 """)
 
 # ------------------------------------------------------------------ 2
@@ -87,7 +94,7 @@ and acts by choosing and producing the answer that its knowledge base and infere
 | PEAS | Description |
 |---|---|
 | **Performance measure** | correct answers (answer accuracy), correct intent (precision / recall / F1), correct refusal of out-of-scope questions, response time, explainability |
-| **Environment** | prospective students and parents typing questions; the university's knowledge (frames, rules, FAQ passages) |
+| **Environment** | applicants, parents, current students and alumni typing questions; the university's knowledge (frames, rules, FAQ passages) |
 | **Actuators** | text answers, clarification questions, explanation traces |
 | **Sensors** | the user's typed sentence |
 
@@ -100,7 +107,7 @@ static, discrete, single-agent.
 * **Knowledge base (KB):** a set of *frames* `F = {University, Program, UGProgram, PGProgram, btech_cse, ..., hostel, ...}` linked by `is_a` edges.
   Slot lookup uses **inheritance**: `value(f, s) = f.s` if the frame stores the slot; otherwise `value(parent(f), s)`.
 * **Percept to query mapping:** NLP maps a sentence *x* to a structured query `q = (intent, entities)`,
-  where `intent ∈ {program_fee, eligibility, hostel, ...}` (18 intents) and the entities are programme, qualification, %, CGPA, exam, category and so on.
+  where `intent ∈ {program_fee, eligibility, examination, certificates, office_info, ...}` (27 intents) and the entities are programme, qualification, %, CGPA, exam, category and so on.
 * **Working memory (WM):** for a personal question, WM = facts about the programme taken from the frames, plus facts about the applicant taken from the sentence.
 * **Rules:** production rules `IF c1 ∧ c2 ∧ ... THEN add fact` (16 eligibility rules and 10 scholarship rules).
 * **Inference / goal test:** **forward chaining**. Rules fire until a goal fact (`academic_eligible`, `net_fee`) is derived or no rule can fire.
@@ -111,6 +118,7 @@ static, discrete, single-agent.
 code(r"""
 kb = KnowledgeBase()
 print(f"Frames: {len(kb.frames)} | Programmes: {len(kb.programs)} | Departments: {len(kb.instances_of('Department'))} "
+      f"| Offices: {len(kb.instances_of('Office'))} | Certificates: {len(kb.instances_of('Certificate'))} "
       f"| Facilities: {len(kb.instances_of('Facility'))}")
 print("\nis_a chain of 'mtech_ai':", " -> ".join(["mtech_ai"] + kb.ancestors("mtech_ai")))
 for slot in ["name", "fee_per_year", "duration", "min_percentage", "application_fee", "phone"]:
@@ -129,17 +137,19 @@ print("\nTotal triples in the semantic network:", len(list(kb.triples())))
 code(r"""
 # Draw a small part of the semantic network (is_a and department links)
 import matplotlib.patches as mpatches
-fig, ax = plt.subplots(figsize=(11, 5.2)); ax.axis("off"); ax.grid(False)
-pos = {"University": (5, 4), "Program": (2.6, 3), "Department": (8.4, 3),
-       "UGProgram": (0.8, 2), "PGProgram": (3.4, 2), "ResearchProgram": (5.6, 2),
-       "btech_cse": (0, 0.8), "btech_ece": (1.6, 0.8), "mtech_ai": (2.9, 0.8), "mba": (4.1, 0.8), "phd": (5.6, 0.8),
-       "dept_cse": (7.6, 0.8), "dept_mgmt": (9.2, 0.8)}
-curve = {("btech_cse", "dept_cse"): 0.16, ("mtech_ai", "dept_cse"): 0.22, ("mba", "dept_mgmt"): 0.2}
+fig, ax = plt.subplots(figsize=(12, 5.6)); ax.axis("off"); ax.grid(False)
+pos = {"University": (5.2, 4), "Program": (2.6, 3), "Department": (9.0, 3),
+       "UGProgram": (1.2, 2), "ArtsScienceUGProgram": (-0.3, 1.15), "PGProgram": (3.6, 2), "ResearchProgram": (5.8, 2),
+       "btech_cse": (1.5, 0.3), "bcom": (-0.3, 0.3), "mtech_ai": (2.9, 0.3), "mba": (4.2, 0.3), "phd": (5.8, 0.3),
+       "dept_cse": (7.4, 0.3), "dept_aids": (8.9, 0.3), "dept_mgmt": (10.4, 0.3)}
+curve = {("btech_cse", "dept_cse"): 0.14, ("mtech_ai", "dept_aids"): 0.2, ("mba", "dept_mgmt"): 0.2}
 edges = [("Program", "University", "is_a"), ("Department", "University", "is_a"), ("UGProgram", "Program", "is_a"),
+         ("ArtsScienceUGProgram", "UGProgram", "is_a"),
          ("PGProgram", "Program", "is_a"), ("ResearchProgram", "Program", "is_a"), ("btech_cse", "UGProgram", "is_a"),
-         ("btech_ece", "UGProgram", "is_a"), ("mtech_ai", "PGProgram", "is_a"), ("mba", "PGProgram", "is_a"),
-         ("phd", "ResearchProgram", "is_a"), ("dept_cse", "Department", "is_a"), ("dept_mgmt", "Department", "is_a"),
-         ("btech_cse", "dept_cse", "department"), ("mtech_ai", "dept_cse", "department"), ("mba", "dept_mgmt", "department")]
+         ("bcom", "ArtsScienceUGProgram", "is_a"), ("mtech_ai", "PGProgram", "is_a"), ("mba", "PGProgram", "is_a"),
+         ("phd", "ResearchProgram", "is_a"), ("dept_cse", "Department", "is_a"), ("dept_aids", "Department", "is_a"),
+         ("dept_mgmt", "Department", "is_a"),
+         ("btech_cse", "dept_cse", "department"), ("mtech_ai", "dept_aids", "department"), ("mba", "dept_mgmt", "department")]
 for a, b, lab in edges:
     (x1, y1), (x2, y2) = pos[a], pos[b]
     if lab == "is_a":
@@ -159,8 +169,24 @@ ax.legend(handles=[mpatches.Patch(fc="#e8f0fe", ec="#2a6fdb", label="class frame
                    plt.Line2D([], [], color="#2a6fdb", ls="--", label="department relation")],
           loc="upper right", fontsize=8, frameon=False)
 ax.set_title("Fragment of the frame-based semantic network", fontsize=11)
-ax.set_xlim(-0.8, 10); ax.set_ylim(-0.75, 4.4)
+ax.set_xlim(-1.4, 11.4); ax.set_ylim(-1.2, 4.4)
 plt.tight_layout(); plt.savefig(FIG / "fig_semantic_network.png", dpi=150, bbox_inches="tight"); plt.show()
+""")
+
+md(r"""
+**University-wide knowledge.** Besides admissions, the knowledge base holds frames for the university's offices, the certificates it
+issues, the academic calendar, the examination rules, fee payment, events, research and alumni. Inheritance works here too:
+every certificate inherits *how to apply* and the issuing office (the Registrar) from the `Certificate` class, and the provisional
+certificate overrides the office with the exam cell. The exam dates are not repeated in the `examinations` frame; they are read
+from the `academic_calendar` frame.
+""")
+code(r"""
+for cert in ["cert_bonafide", "cert_tc", "cert_provisional"]:
+    office, src = kb.get_with_source(cert, "office")
+    print(f"{cert:17} office = {office:17} (from frame '{src}')   fee = Rs. {kb.get(cert, 'fee')}, time = {kb.get(cert, 'time')}")
+print()
+pd.DataFrame([{"office": o, "name": kb.get(o, "name"), "head": kb.get(o, "head"), "phone": kb.get(o, "phone"),
+               "handles": kb.get(o, "handles")} for o in kb.instances_of("Office")])
 """)
 
 # ------------------------------------------------------------------ 3
@@ -173,9 +199,10 @@ The topic asks for **Knowledge Representation + NLP**. The design combines four 
 |---|---|---|
 | **Knowledge representation** | Frames with `is_a` inheritance, which also form a semantic network of triples | University data is naturally hierarchical (Programme → UG/PG → B.Tech CSE). Inheritance avoids repetition: duration, documents and deadlines are stored once at the class level. |
 | **Reasoning** | Production rules + **forward chaining** with refraction and an explanation trace | Eligibility and scholarship policies *are* IF-THEN rules. Forward chaining is data-driven: start from the applicant's facts and derive conclusions. Each fired rule becomes a human-readable justification. |
-| **NLP** | Normalisation → tokenisation → spelling correction (edit-distance similarity) → synonym mapping → stop-word removal → stemming → regex-based entity extraction → hybrid intent classifier (TF-IDF similarity to examples + keyword evidence) | Transparent and explainable, with no training data beyond 109 example sentences and no internet or GPU needed. It handles abbreviations such as *B.E / B.Tech / M.Tech / CGPA*. |
+| **NLP** | Normalisation → tokenisation → spelling correction (edit-distance similarity) → synonym mapping → stop-word removal → stemming → regex-based entity extraction → hybrid intent classifier (TF-IDF similarity to examples + keyword evidence) | Transparent and explainable, with no training data beyond 112 example sentences and no internet or GPU needed. It handles abbreviations such as *B.E / B.Tech / M.Tech / CGPA*. |
 | **Retrieval fallback** | Vector store with cosine similarity over TF-IDF word and character n-gram embeddings | Free-text FAQ passages (ragging, Wi-Fi, refunds) are not worth modelling as frames. A vector store finds them by similarity of meaning. The embedder is pluggable, so a neural sentence embedding can replace TF-IDF without code changes. |
 | **Dialogue management** | Context memory + slot filling | Supports follow-up questions (*"how long is it?"*) and asks for missing facts before reasoning. |
+| **Closed-world assumption** | Anything that is not a frame is not offered; a list of known missing departments and other institutions helps recognise such questions | *"HOD of the Civil department?"* gets "not available at AI University", and *"HOD of CSE in SRM?"* gets "I only know AI University", instead of a wrong but confident answer. |
 
 **Why not a pure machine-learning or LLM chatbot?** For admissions, answers must be *exactly* correct (fees, cut-offs), *consistent* and *explainable*.
 A knowledge-based system guarantees that every answer is traceable to a frame slot or a rule. An LLM may hallucinate numbers and cannot easily justify an eligibility decision.
@@ -240,7 +267,7 @@ md(r"""
 ## 4. Python Implementation
 
 The engine is a small Python package, used by this notebook for all the experiments. The chatbot website runs
-the **same engine** rewritten in JavaScript (`web/js/`, one file per module) and gives identical answers on all 154 test conversations.
+the **same engine** rewritten in JavaScript (`web/js/`, one file per module) and gives identical answers on all 361 test conversations.
 
 ```
 university_chatbot/
@@ -322,10 +349,10 @@ pd.DataFrame([{"id": p, "name": kb.get(p, "name"), "level": kb.get(p, "level"), 
 md(r"""
 ## 5. Dataset and Test-Case Preparation
 
-There is no public dataset for this fictional university, so three data sets were prepared:
+There is no public dataset for this fictional university, so the knowledge and four test sets were prepared:
 
-1. **Knowledge sources** (`data/`): 29 frames, 26 production rules, 18 intents with 109 example sentences,
-   and 90 FAQ passages (75 generated from the frames + 15 free-text passages).
+1. **Knowledge sources** (`data/`): 70 frames, 26 production rules, 27 intents with 178 example sentences,
+   and 175 FAQ passages (160 generated from the frames + 15 free-text passages).
 2. **Main test set** (`test_queries.csv`, 105 queries): hand-written to be *different* from the intent examples,
    in 8 categories that stress different abilities: direct factual questions, paraphrases, spelling mistakes, reasoning questions,
    multi-turn conversations (5 dialogues, 14 turns), free-text FAQs, out-of-scope questions and small talk.
@@ -334,13 +361,21 @@ There is no public dataset for this fictional university, so three data sets wer
    For reasoning questions this means the eligibility decision itself must be right.
 3. **Held-out test set** (`test_queries_holdout.csv`, 25 queries): written *after* development finished and evaluated once, without any further changes to the system.
    It gives an unbiased estimate, because the main test set was also used to find bugs during development.
+4. **University-services development set** (`test_queries_services.csv`, 40 queries): calendar, exams, results, fee payment,
+   certificates, offices, research, events, alumni and two short conversations. It was written after these features were built
+   and was then used to improve them, so its score is optimistic (the first run, before any changes, scored 72.5 %).
+5. **University-services held-out set** (`test_queries_services_holdout.csv`, 20 queries): written *before* that tuning and scored once.
 """)
 
 code(r"""
 test = load_test_set()
 holdout = load_test_set(DATA_DIR / "test_queries_holdout.csv")
+services = load_test_set(DATA_DIR / "test_queries_services.csv")
+services_ho = load_test_set(DATA_DIR / "test_queries_services_holdout.csv")
 summary = pd.DataFrame({"main test set": test.category.value_counts(sort=False),
-                        "held-out set": holdout.category.value_counts(sort=False)}).fillna(0).astype(int)
+                        "held-out set": holdout.category.value_counts(sort=False),
+                        "services (dev)": services.category.value_counts(sort=False),
+                        "services (held-out)": services_ho.category.value_counts(sort=False)}).fillna(0).astype(int)
 summary.loc["TOTAL"] = summary.sum()
 summary
 """)
@@ -409,7 +444,7 @@ res_h[~res_h.answer_ok][["id", "category", "query", "expected_key", "pred_key", 
 md(r"""
 ## 7. Comparison with Alternative Approaches
 
-Two alternative chatbots were built on **exactly the same knowledge** (the same 90 FAQ question-answer pairs, with identical answer wording),
+Two alternative chatbots were built on **exactly the same knowledge** (the same 152 FAQ question-answer pairs, with identical answer wording),
 so that only the *approach* differs:
 
 | System | Description |
@@ -505,45 +540,75 @@ display(pd.DataFrame(ho).round(3))
 ho_errors
 """)
 
+md(r"""
+### 7.4 University-services test sets
+
+All three chatbots use the same knowledge here too: the FAQ list is generated from the same frames (one entry for each office,
+certificate, the calendar, exams, results, fee payment, events, research and alumni).
+
+*The held-out set scored 80 % for the hybrid chatbot when it was first run. One of its questions ("Can I pay the semester fee using UPI?")
+revealed a bug: the spelling corrector turned "using" into "nursing", a word that had been added to the vocabulary for the closed-world
+check. The bug was fixed by adding everyday words such as "using" to the list of words that are never corrected; nothing was tuned to
+the held-out questions. The numbers below are after that fix.*
+""")
+code(r"""
+sv = {}
+for set_name, data in {"services (dev)": services, "services (held-out)": services_ho}.items():
+    for name, b in {"Keyword FAQ matching": KeywordFAQBot(), "NLP + vector retrieval": RetrievalBot(),
+                    "Hybrid KR + NLP (proposed)": UniversityChatbot()}.items():
+        r = run_bot(b, data)
+        sv[(set_name, name)] = r.answer_ok.mean()
+        if name.startswith("Hybrid") and set_name == "services (held-out)":
+            sv_errors = r[~r.answer_ok][["id", "query", "expected_key", "pred_key"]]
+display((pd.Series(sv).unstack() * 100).round(1))
+sv_errors
+""")
+
 # ------------------------------------------------------------------ 8
 md(r"""
 ## 8. Results, Discussion and Conclusion
 
 ### Results
-* On the 105-query main test set the hybrid KR + NLP chatbot gave the correct answer to **92.4 %** of queries
-  (intent macro-F1 **0.93**), against **38.1 %** for NLP + vector retrieval and **31.4 %** for keyword FAQ matching.
-* On the **held-out** set, written after development and run once, it reached **80 %**, against 48 % and 32 %.
-  The drop from 92 % to 80 % is the expected optimism of a test set that was also used for debugging; the ranking of the three approaches does not change.
-* Every answer was produced in about **2 ms** on a laptop CPU, with no GPU and no internet.
+* On the 105-query main (admissions) test set the hybrid KR + NLP chatbot gave the correct answer to **94.3 %** of queries
+  (intent macro-F1 **0.96**), against **32.4 %** for NLP + vector retrieval and **26.7 %** for keyword FAQ matching.
+* On the **held-out** admissions set it reached **80 %**, against 48 % and 32 %.
+  The drop from 94 % to 80 % is the expected optimism of a test set that was also used for debugging; the ranking of the three approaches does not change.
+* On the **university-services** questions it reached **100 %** on the development set (72.5 % before it was used for tuning) and
+  **90 %** on the held-out set (80 % on the first run, before the spelling bug it revealed was fixed), against 40 % for both alternatives.
+* Every answer was produced in about **3 ms** on a laptop CPU, with no GPU and no internet.
 
 ### Discussion and observations
-1. **Reasoning is what a retrieval bot cannot do.** Both baselines scored **0 %** on reasoning questions and **7 %** on multi-turn questions.
+1. **Reasoning is what a retrieval bot cannot do.** Both baselines scored **0 %** on reasoning questions and **0 %** on multi-turn questions.
    They can return the *general* eligibility text, but not the *decision* for a specific applicant ("72 % in B.E ECE → eligible for M.Tech AI").
-   Removing the rule engine alone drops the hybrid from 92.4 % to 72.4 %, so it is the largest single contributor.
+   Removing the rule engine alone drops the hybrid from 94.3 % to 74.3 %, so it is the largest single contributor.
 2. **Inheritance keeps the KB small and consistent.** `duration`, `documents` and `deadline` are stored once per class
    (UG/PG/Research) and inherited by all programmes. The trace shows where each value came from (e.g. `mba.duration` comes from `PGProgram`).
 3. **Explanations come for free.** Each fired rule produces a sentence, e.g. *"[R1] Converted CGPA 6.8 to 64.6 %"* or *"[R3] 5 % relaxation for OBC"*.
    That transparency matters for admission decisions.
-4. **NLP robustness:** spelling correction raised typo accuracy from 40 % to 100 % (ablation), and normalisation of *B.E / B.Tech / M.Tech / plus two / CGPA* was essential for entity extraction.
+4. **NLP robustness:** spelling correction raised typo accuracy from 30 % to 100 % (ablation), and normalisation of *B.E / B.Tech / M.Tech / plus two / CGPA* was essential for entity extraction.
 5. **The vector store complements the KB.** With no fallback, free-text FAQ accuracy is 0 %. With it, 67 %, and Recall@3 is 100 %.
    On those questions the plain retrieval baselines actually score *higher* (83-92 %), because the hybrid sometimes routes a question to a confident KB intent:
    *"wifi in the hostel"* goes to the hostel frame. This is a real trade-off between structured and unstructured knowledge.
-6. **Out-of-scope detection** (80 % recall) relies on a domain-vocabulary gate. Questions that share domain words
-   (*"share **price** of Infosys"*, where price is a synonym of fee) still slip through. The threshold sweep shows that higher thresholds (0.35-0.55) would score better on this test set (up to 95 %),
+6. **Out-of-scope detection** (90 % recall) relies on a domain-vocabulary gate. Questions that share domain words
+   (*"share **price** of Infosys"*, where price is a synonym of fee) still slip through. The threshold sweep shows that higher thresholds (0.35-0.55) would score better on this test set (up to 96 %),
    but it was *not* adopted, to avoid tuning on test data. It should be validated on new data first.
-7. **Limitations:** the knowledge must be engineered by hand; the rule base covers only eligibility and scholarship policies; the lexical
+7. **One knowledge base for the whole university.** Offices, certificates, the calendar and exam rules are frames like the programmes,
+   so new topics needed new frames and answer templates but no new kind of reasoning. Links between frames answer follow-ups such as
+   *"Which office handles it?"* (examinations → exam cell). The closed-world assumption keeps the bot honest: a department or another
+   university that is not in the knowledge base gets "not available" instead of a confident wrong answer.
+8. **Limitations:** the knowledge must be engineered by hand; the rule base covers only eligibility and scholarship policies; the lexical
    TF-IDF embeddings miss pure synonyms (*"in charge of"* vs *"HOD"*); there is English only; and the data is synthetic.
 
 ### Conclusion
-A hybrid **Knowledge Representation + NLP** chatbot was designed, implemented and evaluated. Frames with inheritance hold the university's
-structured knowledge. Forward-chaining production rules answer personalised eligibility and fee questions with explanations.
+A hybrid **Knowledge Representation + NLP** chatbot for the whole university was designed, implemented and evaluated. Frames with
+inheritance hold the university's structured knowledge: programmes, departments, offices, certificates, the academic calendar and exam rules. Forward-chaining production rules answer personalised eligibility and fee questions with explanations.
 A lightweight NLP pipeline turns free-form questions into structured queries, a dialogue manager handles follow-ups and missing details,
 and a vector store answers unstructured FAQs. The system clearly beats retrieval-only alternatives, especially on reasoning and multi-turn questions,
-while staying fast, explainable and fully offline.
+while staying fast and explainable, and it runs in any web browser.
 
 **Future work:** replace the TF-IDF embedder with a neural sentence embedding (the `Embedder` interface already supports this);
 learn intent weights from real chat logs; add backward chaining for "what do I need to become eligible?" questions; add Tamil/Hindi support;
-and connect the KB to the university's live admissions database.
+and connect the KB to the university's live databases (admissions, exam results, fee dues).
 """)
 
 # ------------------------------------------------------------------ 9
@@ -569,7 +634,16 @@ for q in conversation:
     print(f"      [intent={r.intent} | source={r.source} | confidence={r.confidence:.2f} | {r.latency_ms:.1f} ms]\n")
 """)
 
-md("**Explanation trace of the eligibility answer above** (the same steps the website shows in its "How I answered" panel):")
+md("**University services: exams, an office follow-up, certificates and fees**")
+code(r"""
+s3 = demo_bot.new_session()
+for q in ["When are the end semester exams?", "Which office handles it?", "How do I get a bonafide certificate?",
+          "What is the late fee for semester fees?", "When does the semester start?", "Who is the VC?"]:
+    r = demo_bot.respond(q, s3)
+    print(f"YOU : {q}\nBOT : {r.text}\n      [answer key={r.answer_key} | source={r.source}]\n")
+""")
+
+md('**Explanation trace of the eligibility answer above** (how the answer was produced, step by step):')
 code(r"""
 s2 = demo_bot.new_session()
 demo_bot.respond("Am I eligible for M.Tech AI?", s2)
@@ -578,10 +652,22 @@ print("\n".join(r.trace))
 """)
 
 md(r"""
+**Questions outside the knowledge base (closed-world assumption).** The AI department has its own HOD. A department the university
+does not have, or a question about another university, gets a polite "not available" instead of a wrong answer.
+""")
+code(r"""
+for q in ["Who is the HOD of the AI department?", "Do you have BBA?", "Who is the HOD of the Civil department?",
+          "Do you offer Law?", "hi, do you have available seats in medical?", "Who is the HOD of the CSBS department?",
+          "Who is the HOD of CSE in SRM University?", "The answers are not relevant"]:
+    r = demo_bot.respond(q, demo_bot.new_session())
+    print(f"YOU : {q}\nBOT : {r.text}\n      [answer key={r.answer_key} | source={r.source}]\n")
+""")
+
+md(r"""
 ### 9.2 The chatbot website
 The working chatbot is online at **https://manikandanayyakkannu.github.io/FAI-Mini-Project/**. It runs completely in the browser, on a laptop or a phone, with nothing to install.
-Next to each answer it shows the intent, the details picked from the question, the answer source and the rules that fired.
-The *Demo 1* and *Demo 2* buttons (or `?demo=1` / `?demo=2` at the end of the link) play a short sample conversation.
+The replies contain only the answer; how each one was produced is shown in this notebook (the traces above).
+The *Demo 1*, *Demo 2* and *Demo 3* buttons (or `?demo=1`, `?demo=2`, `?demo=3` at the end of the link) play a short sample conversation.
 
 ![chatbot website](docs/figures/demo_web_1.png)
 """)

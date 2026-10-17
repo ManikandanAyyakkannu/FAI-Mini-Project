@@ -20,9 +20,13 @@ const NORMALISE = [
   [/\bb\.\s?sc\b\.?|\bb\s?sc\b/g, "bsc"],
   [/\bm\.\s?sc\b\.?|\bm\s?sc\b/g, "msc"],
   [/\bb\.\s?com\b\.?/g, "bcom"],
+  [/\bm\.\s?com\b\.?/g, "mcom"],
+  [/\bb\.b\.a\b\.?/g, "bba"],
   [/\bb\.\s?a\b\.?/g, "ba"],
+  [/\bm\.\s?a\b\.?/g, "ma"],
   [/\bplus\s?two\b|\+\s?2\b|\bhsc\b|\bclass\s?12\b|\b12th\s+(?:std|standard|grade)\b|\bhigher secondary\b|\btwelfth\b/g, "12th"],
   [/\ba\.i\.?/g, "ai"],
+  [/\bai\s+university\b/g, "university"],        // the university's own name, not the AI programme
   [/\bai\s*(?:&|and|-|\/)\s*ds\b/g, "ai ds"],
   [/\bai\s*(?:&|and|-|\/)\s*data science\b/g, "ai ds"],
   [/\bartificial intelligence (?:&|and) data science\b/g, "ai ds"],
@@ -95,10 +99,15 @@ const WORD_SYNONYMS = {
   where: "location", situated: "location", located: "location",
   // greetings
   hii: "hi", hai: "hi", helo: "hello", thx: "thanks", thankyou: "thanks",
+  // student short forms
+  sem: "semester", sems: "semester", exams: "exam", dd: "draft",
 };
 const synonym = w => (Object.hasOwn(WORD_SYNONYMS, w) ? WORD_SYNONYMS[w] : w);
 
 const words = s => s.trim().split(/\s+/);
+
+// the words the synonym table is built on; preferred when spelling correction finds a tie
+const CORE_WORDS = new Set([...Object.keys(WORD_SYNONYMS), ...Object.values(WORD_SYNONYMS)]);
 
 const STOPWORDS = new Set(words(`
 a an the is are am was were be been being do does did doing to of in on at for from by
@@ -115,7 +124,8 @@ other others every great thing things think thought people really still never al
 house money world water phone write right wrong little small large young older video videos
 free freely trees three where whose whom please hello thanks thank sorry bring brought
 match matches team teams player won lost meaning capital joke jokes laptop mobile ticket
-recipe cook cooking travel train flight hotel`));
+recipe cook cooking travel train flight hotel
+using used uses useful possible parts break lunch week weeks month months today daily every`));
 
 // words that must never be "corrected"
 const PROTECTED = new Set(["btech", "mtech", "mba", "mca", "phd", "bsc", "msc", "bca", "bcom", "cse", "ece",
@@ -167,7 +177,7 @@ export class TextPreprocessor {
         // short words must keep the same first letter, to avoid wild corrections
         const long = tok.length >= 5;
         const candidates = long ? this.vocabulary : [...this.vocabulary].filter(w => w[0] === tok[0]);
-        const match = closestWord(tok, candidates, long ? 0.8 : 0.75);
+        const match = closestWord(tok, candidates, long ? 0.8 : 0.75, CORE_WORDS);
         if (match) {
           corrections[tok] = match;
           return match;
@@ -205,7 +215,7 @@ const LEVEL_PATTERNS = [
   ["mba", "mba|master of business administration|business administration"],
   ["mca", "mca|master of computer applications"],
   ["phd", "phd|doctorate|doctoral"],
-  ["bsc", "bsc"], ["msc", "msc"], ["bca", "bca"], ["bcom", "bcom"],
+  ["bsc", "bsc"], ["msc", "msc"], ["bca", "bca"], ["bcom", "bcom"], ["mcom", "mcom"],
   ["ba", "ba"], ["ma", "ma"], ["bba", "bba"], ["diploma", "diploma"], ["twelfth", "12th"],
   ["pg", "pg|postgraduate|post graduate|masters"],
 ];
@@ -224,6 +234,10 @@ const BRANCH_PATTERNS = [
   ["physics", "physics"],
   ["chemistry", "chemistry"],
   ["commerce", "commerce"],
+  ["english", "english literature|english"],
+  ["economics", "economics"],
+  ["analytics", "business analytics|analytics"],
+  ["finance", "finance"],
 ];
 const groupRegex = (prefix, list) =>
   new RegExp("\\b(?:" + list.map(([n, p]) => `(?<${prefix}${n}>${p})`).join("|") + ")\\b", "g");
@@ -236,7 +250,15 @@ const OFFERED = {
   "btech|ds": "btech_aids", "btech|ece": "btech_ece", "btech|mech": "btech_mech",
   "mtech|ai": "mtech_ai", "mtech|aids": "mtech_ai", "mtech|ds": "mtech_ds", "mtech|cse": "mtech_ai",
   "mba|": "mba", "mca|": "mca", "phd|": "phd",
+  "mba|analytics": "mba_ba", "mba|finance": "mba_finance",
+  "bsc|cse": "bsc_cs", "bsc|maths": "bsc_maths", "bca|": "bca",
+  "bcom|": "bcom", "bba|": "bba", "mcom|": "mcom",
+  "ba|english": "ba_english", "ba|economics": "ba_economics", "ma|english": "ma_english",
 };
+// degrees that are either a programme we offer or the student's own qualification
+const FLEX_LEVELS = new Set(["bsc", "bca", "bcom", "ba", "bba", "msc", "ma", "mcom"]);
+// branches a level may be combined with when it is read as one degree
+const LEVEL_BRANCHES = { mba: new Set(["analytics", "finance"]), mca: new Set(), phd: new Set(), "12th": new Set(), diploma: new Set() };
 const BARE_BRANCH = { cse: "btech_cse", ece: "btech_ece", mech: "btech_mech", aids: "btech_aids", ai: "mtech_ai", ds: "mtech_ds" };
 const GROUPS = { btech: "group:btech", mtech: "group:mtech", pg: "group:pg" };
 
@@ -259,15 +281,16 @@ const CATEGORY_RE = /\b(sc|st|obc|mbc|bc|general|oc)\b(?:\s+(?:category|student|
 // one degree mentioned in the sentence, e.g. "btech ece"
 class DegreeMention {
   constructor(level, branch, start, end) {
-    Object.assign(this, { level, branch, start, end, role: "unknown" });   // role: target | qualification
+    // role: target | qualification; ambiguous = no cue word, could be either
+    Object.assign(this, { level, branch, start, end, role: "unknown", ambiguous: false });
   }
 
   get program() {
-    if ((this.level === "btech" || this.level === "mtech") && this.branch)
-      return OFFERED[`${this.level}|${this.branch}`] || null;
-    if (["mba", "mca", "phd"].includes(this.level)) return OFFERED[`${this.level}|`];
-    if (this.level === null && this.branch) return BARE_BRANCH[this.branch] || null;
-    return null;
+    if (this.level === null) return this.branch ? BARE_BRANCH[this.branch] || null : null;
+    const key = `${this.level}|${this.branch}`;
+    if (this.branch && key in OFFERED) return OFFERED[key];
+    if (this.level === "btech" || this.level === "mtech") return null;   // a branch we do not offer, or none
+    return OFFERED[`${this.level}|`] || null;
   }
 
   get group() {
@@ -294,8 +317,8 @@ export function qualificationLabel(q) {
   return `${QUAL_NAMES[lvl] || lvl.toUpperCase()} ${br.toUpperCase()}`.trim();
 }
 
-const ENTITY_ORDER = ["program", "qualification", "department", "facility", "percentage", "cgpa",
-  "exam", "category", "subjects", "sports", "sibling", "levelFilter"];
+const ENTITY_ORDER = ["program", "qualification", "department", "facility", "office", "certificate", "percentage", "cgpa",
+  "exam", "category", "subjects", "sports", "sibling", "levelFilter", "year"];
 
 // only the entities that were actually found
 export function entitiesAsDict(ent) {
@@ -310,9 +333,12 @@ export function entitiesAsDict(ent) {
 
 export class EntityExtractor {
   constructor(kb) {
-    this.deptAliases = Object.entries(kb.departmentAliases)
-      .flatMap(([dept, aliases]) => aliases.map(a => [a, dept]))
+    const byLength = aliases => Object.entries(aliases)
+      .flatMap(([id, list]) => list.map(a => [a, id]))
       .sort((x, y) => y[0].length - x[0].length);
+    this.deptAliases = byLength(kb.departmentAliases);
+    this.officeAliases = byLength(kb.officeAliases);
+    this.certAliases = byLength(kb.certificateAliases);
   }
 
   degrees(text) {
@@ -334,8 +360,8 @@ export class EntityExtractor {
     const mentions = [];
     for (const [lvl, s, e] of levels) {
       let best = null;
-      branches.forEach(([, bs, be], bi) => {
-        if (used.has(bi)) return;
+      branches.forEach(([br, bs, be], bi) => {
+        if (used.has(bi) || (LEVEL_BRANCHES[lvl] && !LEVEL_BRANCHES[lvl].has(br))) return;
         const gapAfter = bs - e;           // branch after level: "btech in cse"
         const gapBefore = s - be;          // branch before level: "cse btech"
         if ((gapAfter > 0 && gapAfter <= 3) || (gapBefore > 0 && gapBefore <= 1)) {
@@ -343,7 +369,7 @@ export class EntityExtractor {
           if (best === null || dist < best[0]) best = [dist, bi];
         }
       });
-      if (best && !["mba", "mca", "phd", "12th", "diploma"].includes(lvl)) {
+      if (best) {
         used.add(best[1]);
         const [br, bs, be] = branches[best[1]];
         mentions.push(new DegreeMention(lvl, br, Math.min(s, bs), Math.max(e, be)));
@@ -358,10 +384,18 @@ export class EntityExtractor {
 
     // is this degree the one the student wants, or the one they already have?
     for (const m of mentions) {
-      const before = tokens.slice(Math.max(0, m.start - 3), m.start);
+      // the 3 words before the degree; "do you have B.Tech Civil" is about the university, not the student
+      const lo = Math.max(0, m.start - 3);
+      const before = tokens.slice(lo, m.start).filter((t, k) =>
+        !((t === "have" || t === "had") && lo + k > 0 && ["you", "u", "we"].includes(tokens[lo + k - 1])));
       const justBefore = tokens.slice(Math.max(0, m.start - 1), m.start);
-      if (["12th", "bsc", "bca", "bcom", "ba", "bba", "diploma", "msc", "ma"].includes(m.level)) {
+      if (m.level === "12th" || m.level === "diploma") {
         m.role = "qualification";
+      } else if (FLEX_LEVELS.has(m.level)) {
+        // "fee for BCA" asks about the programme; "I did BCA" / "after BCA" is the student's degree
+        if (before.some(t => QUAL_CUES.has(t)) || m.program === null) m.role = "qualification";
+        else if (before.some(t => TARGET_CUES.has(t))) m.role = "target";
+        else { m.role = "qualification"; m.ambiguous = true; }
       } else if (before.some(t => QUAL_CUES.has(t)) && !justBefore.some(t => ["for", "into", "join"].includes(t))) {
         m.role = "qualification";
       } else if (before.some(t => TARGET_CUES.has(t))) {
@@ -373,8 +407,10 @@ export class EntityExtractor {
 
   extract(text) {
     const ent = {
-      program: null, qualification: null, department: null, facility: null, percentage: null,
+      program: null, qualification: null, department: null, facility: null, office: null, certificate: null, percentage: null,
       cgpa: null, exam: null, category: null, subjects: null, sports: false, sibling: false, levelFilter: null,
+      year: null,                       // academic season, e.g. "2022-23"
+      ambiguousQualification: null,     // degree read as the programme, but it may be the student's own
     };
     const degrees = this.degrees(text);
 
@@ -401,6 +437,21 @@ export class EntityExtractor {
         break;
       }
     }
+
+    // academic season: "2023-24" as written, or "2023" = the batch that graduated in 2023 (2022-23)
+    const pair = text.match(/\b(20\d{2})\s+(?:to\s+)?(\d{2}|20\d{2})\b/);
+    const single = text.match(/\b(20\d{2})\b/);
+    if (pair && Number(pair[2].slice(-2)) === (Number(pair[1]) + 1) % 100) {
+      ent.year = `${pair[1]}-${pair[2].slice(-2)}`;
+    } else if (single) {
+      const y = Number(single[1]);
+      ent.year = `${y - 1}-${String(y % 100).padStart(2, "0")}`;
+    }
+
+    // university offices and certificates (longest alias first, so "exam cell" beats "cell")
+    const named = list => (list.find(([a]) => new RegExp(`\\b${escapeRe(a)}\\b`).test(text)) || [null, null])[1];
+    ent.office = named(this.officeAliases);
+    ent.certificate = named(this.certAliases);
 
     for (const [fac, pat] of Object.entries(FACILITIES)) {
       if (new RegExp(`\\b(?:${pat})\\b`).test(text)) { ent.facility = fac; break; }
@@ -441,6 +492,15 @@ export class EntityExtractor {
 
     ent.sports = /\b(?:sports? (?:quota|scholarship)|state level|national level|district level|sportsperson|athlete|player)\b/.test(text);
     ent.sibling = /\b(?:sibling|brother|sister)\b/.test(text);
+
+    // "BCA fee?" - a degree with no cue word and no marks is the programme being asked about
+    const own = degrees.filter(d => d.qualification);
+    if (ent.program === null && own.length === 1 && own[0].ambiguous && own[0].program &&
+        ent.percentage === null && ent.cgpa === null) {
+      ent.program = own[0].program;
+      ent.ambiguousQualification = ent.qualification;
+      ent.qualification = null;
+    }
     return ent;
   }
 }

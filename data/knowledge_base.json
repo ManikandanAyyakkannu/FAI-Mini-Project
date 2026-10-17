@@ -1,17 +1,23 @@
 {
-  "_comment": "Frame-based knowledge base for the fictional 'Greenfield University'. Frames inherit slots through 'is_a' links (semantic network). All data is synthetic and created only for this academic project.",
+  "_comment": "Frame-based knowledge base for the fictional 'AI University'. Frames inherit slots through 'is_a' links (semantic network). All data is synthetic and created only for this academic project.",
   "frames": {
     "University": {
       "is_a": null,
       "type": "class",
-      "name": "Greenfield University",
+      "name": "AI University",
       "location": "Chennai, Tamil Nadu",
       "established": 1998,
       "accreditation": "NAAC A++ (fictional)",
-      "website": "www.greenfield-univ.example",
+      "website": "www.aiuniversity.example",
       "phone": "+91 44 2345 6789",
-      "email": "admissions@greenfield-univ.example",
-      "office_hours": "Monday to Saturday, 9:00 AM to 5:00 PM"
+      "email": "admissions@aiuniversity.example",
+      "office_hours": "Monday to Saturday, 9:00 AM to 5:00 PM",
+      "students": "about 8,600 students (6,200 undergraduate, 2,100 postgraduate and 300 research scholars)",
+      "vice_chancellor": "Dr. A. Raghavan",
+      "faculty": "520 faculty members, 78% of them with a Ph.D.",
+      "student_teacher_ratio": "about 15 to 1",
+      "campus": "a 120-acre campus in Chennai, Tamil Nadu",
+      "placement_year": "2025-26"
     },
 
     "Program": {
@@ -54,6 +60,14 @@
       "deadline": "30 November 2026 (January session) and 31 May 2027 (July session)",
       "documents": ["Master's degree certificate and mark sheets", "Research proposal (2-3 pages)", "Entrance score (UGC-NET / GATE / GUET-Research)", "Two recommendation letters", "Aadhaar or any government photo ID"]
     },
+    "ArtsScienceUGProgram": {
+      "is_a": "UGProgram",
+      "type": "class",
+      "duration": "3 years (6 semesters)",
+      "min_percentage": 50,
+      "required_subjects": [],
+      "entrance_exams": ["GUET"]
+    },
 
     "btech_cse": {
       "is_a": "UGProgram", "type": "instance",
@@ -64,7 +78,7 @@
     "btech_aids": {
       "is_a": "UGProgram", "type": "instance",
       "name": "B.Tech Artificial Intelligence and Data Science",
-      "department": "dept_cse",
+      "department": "dept_aids",
       "fee_per_year": 160000, "seats": 120
     },
     "btech_ece": {
@@ -79,10 +93,54 @@
       "department": "dept_mech",
       "fee_per_year": 110000, "seats": 60
     },
+    "bsc_cs": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "B.Sc Computer Science",
+      "department": "dept_mca",
+      "fee_per_year": 70000, "seats": 120
+    },
+    "bca": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "BCA (Bachelor of Computer Applications)",
+      "department": "dept_mca",
+      "fee_per_year": 65000, "seats": 120
+    },
+    "bsc_maths": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "B.Sc Mathematics",
+      "department": "dept_maths",
+      "fee_per_year": 50000, "seats": 60
+    },
+    "bcom": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "B.Com (Bachelor of Commerce)",
+      "department": "dept_commerce",
+      "fee_per_year": 60000, "seats": 180
+    },
+    "bba": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "BBA (Bachelor of Business Administration)",
+      "department": "dept_mgmt",
+      "fee_per_year": 75000, "seats": 120
+    },
+    "ba_english": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "B.A. English Literature",
+      "department": "dept_english",
+      "fee_per_year": 45000, "seats": 60,
+      "min_percentage": 45
+    },
+    "ba_economics": {
+      "is_a": "ArtsScienceUGProgram", "type": "instance",
+      "name": "B.A. Economics",
+      "department": "dept_economics",
+      "fee_per_year": 45000, "seats": 60,
+      "min_percentage": 45
+    },
     "mtech_ai": {
       "is_a": "PGProgram", "type": "instance",
       "name": "M.Tech Artificial Intelligence",
-      "department": "dept_cse",
+      "department": "dept_aids",
       "fee_per_year": 120000, "seats": 30,
       "entrance_exams": ["GATE", "GUET-PG"],
       "allowed_qualifications": ["btech_cse", "btech_it", "btech_ece", "btech_eee", "btech_aids", "mca", "msc_cs"],
@@ -91,7 +149,7 @@
     "mtech_ds": {
       "is_a": "PGProgram", "type": "instance",
       "name": "M.Tech Data Science",
-      "department": "dept_cse",
+      "department": "dept_aids",
       "fee_per_year": 120000, "seats": 30,
       "entrance_exams": ["GATE", "GUET-PG"],
       "allowed_qualifications": ["btech_cse", "btech_it", "btech_ece", "btech_eee", "btech_aids", "mca", "msc_cs", "msc_maths", "msc_stats"],
@@ -106,6 +164,24 @@
       "entrance_exams": ["CAT", "MAT", "GMAT", "TANCET"],
       "allowed_qualifications": ["any_degree"]
     },
+    "mba_ba": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "MBA Business Analytics",
+      "department": "dept_mgmt",
+      "fee_per_year": 240000, "seats": 60,
+      "min_percentage": 55,
+      "entrance_exams": ["CAT", "MAT", "GMAT", "TANCET"],
+      "allowed_qualifications": ["any_degree"]
+    },
+    "mba_finance": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "MBA Finance",
+      "department": "dept_mgmt",
+      "fee_per_year": 220000, "seats": 60,
+      "min_percentage": 50,
+      "entrance_exams": ["CAT", "MAT", "GMAT", "TANCET"],
+      "allowed_qualifications": ["any_degree"]
+    },
     "mca": {
       "is_a": "PGProgram", "type": "instance",
       "name": "MCA (Master of Computer Applications)",
@@ -114,6 +190,24 @@
       "min_percentage": 50,
       "entrance_exams": ["TANCET", "GUET-PG"],
       "allowed_qualifications": ["bca", "bsc", "btech", "bcom"]
+    },
+    "mcom": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "M.Com (Master of Commerce)",
+      "department": "dept_commerce",
+      "fee_per_year": 55000, "seats": 40,
+      "min_percentage": 50,
+      "entrance_exams": ["TANCET", "GUET-PG"],
+      "allowed_qualifications": ["bcom", "bba"]
+    },
+    "ma_english": {
+      "is_a": "PGProgram", "type": "instance",
+      "name": "M.A. English Literature",
+      "department": "dept_english",
+      "fee_per_year": 50000, "seats": 30,
+      "min_percentage": 50,
+      "entrance_exams": ["GUET-PG"],
+      "allowed_qualifications": ["ba"]
     },
     "phd": {
       "is_a": "ResearchProgram", "type": "instance",
@@ -125,12 +219,17 @@
     },
 
     "Department": {"is_a": "University", "type": "class"},
-    "dept_cse":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Science and Engineering", "hod": "Dr. R. Lakshmi", "block": "Turing Block", "dept_email": "cse@greenfield-univ.example", "placement": {"percent_placed": 94, "average_lpa": 7.2, "highest_lpa": 32, "top_recruiters": ["TCS", "Infosys", "Zoho", "Amazon", "Freshworks"]}},
-    "dept_ece":  {"is_a": "Department", "type": "instance", "name": "Department of Electronics and Communication Engineering", "hod": "Dr. S. Arjun", "block": "Bose Block", "dept_email": "ece@greenfield-univ.example", "placement": {"percent_placed": 88, "average_lpa": 5.8, "highest_lpa": 18, "top_recruiters": ["Qualcomm", "Bosch", "HCL", "Wipro"]}},
-    "dept_mech": {"is_a": "Department", "type": "instance", "name": "Department of Mechanical Engineering", "hod": "Dr. K. Prakash", "block": "Visvesvaraya Block", "dept_email": "mech@greenfield-univ.example", "placement": {"percent_placed": 79, "average_lpa": 4.6, "highest_lpa": 12, "top_recruiters": ["Ashok Leyland", "TVS Motors", "L&T", "Hyundai"]}},
-    "dept_mgmt": {"is_a": "Department", "type": "instance", "name": "School of Management", "hod": "Dr. Meera Nair", "block": "Kautilya Block", "dept_email": "mba@greenfield-univ.example", "placement": {"percent_placed": 91, "average_lpa": 8.1, "highest_lpa": 24, "top_recruiters": ["Deloitte", "HDFC Bank", "KPMG", "Asian Paints"]}},
-    "dept_mca":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Applications", "hod": "Dr. V. Anand", "block": "Turing Block", "dept_email": "mca@greenfield-univ.example", "placement": {"percent_placed": 86, "average_lpa": 5.2, "highest_lpa": 14, "top_recruiters": ["Cognizant", "Accenture", "Capgemini"]}},
-    "dept_research": {"is_a": "Department", "type": "instance", "name": "Centre for Research", "hod": "Dr. P. Subramanian (Dean of Research)", "block": "Raman Block", "dept_email": "research@greenfield-univ.example"},
+    "dept_cse":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Science and Engineering", "hod": "Dr. R. Lakshmi", "block": "Turing Block", "dept_email": "cse@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 87, "average_lpa": 5.9, "highest_lpa": 23}, "2023-24": {"percent_placed": 90, "average_lpa": 6.4, "highest_lpa": 26}, "2024-25": {"percent_placed": 92, "average_lpa": 6.8, "highest_lpa": 29}}, "placement": {"percent_placed": 94, "average_lpa": 7.2, "highest_lpa": 32, "top_recruiters": ["TCS", "Infosys", "Zoho", "Amazon", "Freshworks"]}},
+    "dept_aids": {"is_a": "Department", "type": "instance", "name": "Department of Artificial Intelligence and Data Science", "hod": "Dr. N. Kavitha", "block": "Turing Block", "dept_email": "aids@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 85, "average_lpa": 6.5, "highest_lpa": 19}, "2023-24": {"percent_placed": 88, "average_lpa": 7.0, "highest_lpa": 22}, "2024-25": {"percent_placed": 90, "average_lpa": 7.4, "highest_lpa": 25}}, "placement": {"percent_placed": 92, "average_lpa": 7.8, "highest_lpa": 28, "top_recruiters": ["Zoho", "Freshworks", "Amazon", "Mu Sigma", "LatentView Analytics"]}},
+    "dept_ece":  {"is_a": "Department", "type": "instance", "name": "Department of Electronics and Communication Engineering", "hod": "Dr. S. Arjun", "block": "Bose Block", "dept_email": "ece@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 81, "average_lpa": 4.5, "highest_lpa": 9}, "2023-24": {"percent_placed": 84, "average_lpa": 5.0, "highest_lpa": 12}, "2024-25": {"percent_placed": 86, "average_lpa": 5.4, "highest_lpa": 15}}, "placement": {"percent_placed": 88, "average_lpa": 5.8, "highest_lpa": 18, "top_recruiters": ["Qualcomm", "Bosch", "HCL", "Wipro"]}},
+    "dept_mech": {"is_a": "Department", "type": "instance", "name": "Department of Mechanical Engineering", "hod": "Dr. K. Prakash", "block": "Visvesvaraya Block", "dept_email": "mech@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 72, "average_lpa": 3.3, "highest_lpa": 6}, "2023-24": {"percent_placed": 75, "average_lpa": 3.8, "highest_lpa": 7}, "2024-25": {"percent_placed": 77, "average_lpa": 4.2, "highest_lpa": 9}}, "placement": {"percent_placed": 79, "average_lpa": 4.6, "highest_lpa": 12, "top_recruiters": ["Ashok Leyland", "TVS Motors", "L&T", "Hyundai"]}},
+    "dept_mgmt": {"is_a": "Department", "type": "instance", "name": "School of Management", "hod": "Dr. Meera Nair", "block": "Kautilya Block", "dept_email": "mba@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 84, "average_lpa": 6.8, "highest_lpa": 15}, "2023-24": {"percent_placed": 87, "average_lpa": 7.3, "highest_lpa": 18}, "2024-25": {"percent_placed": 89, "average_lpa": 7.7, "highest_lpa": 21}}, "placement": {"percent_placed": 91, "average_lpa": 8.1, "highest_lpa": 24, "top_recruiters": ["Deloitte", "HDFC Bank", "KPMG", "Asian Paints"]}},
+    "dept_mca":  {"is_a": "Department", "type": "instance", "name": "Department of Computer Applications", "hod": "Dr. V. Anand", "block": "Turing Block", "dept_email": "mca@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 79, "average_lpa": 3.9, "highest_lpa": 7}, "2023-24": {"percent_placed": 82, "average_lpa": 4.4, "highest_lpa": 8}, "2024-25": {"percent_placed": 84, "average_lpa": 4.8, "highest_lpa": 11}}, "placement": {"percent_placed": 86, "average_lpa": 5.2, "highest_lpa": 14, "top_recruiters": ["Cognizant", "Accenture", "Capgemini"]}},
+    "dept_commerce": {"is_a": "Department", "type": "instance", "name": "Department of Commerce", "hod": "Dr. G. Ramesh", "block": "Kautilya Block", "dept_email": "commerce@aiuniversity.example", "placement_history": {"2022-23": {"percent_placed": 74, "average_lpa": 2.8, "highest_lpa": 6}, "2023-24": {"percent_placed": 77, "average_lpa": 3.3, "highest_lpa": 6}, "2024-25": {"percent_placed": 79, "average_lpa": 3.7, "highest_lpa": 7}}, "placement": {"percent_placed": 81, "average_lpa": 4.1, "highest_lpa": 9, "top_recruiters": ["EY", "HDFC Bank", "Deloitte", "TCS"]}},
+    "dept_english": {"is_a": "Department", "type": "instance", "name": "Department of English", "hod": "Dr. Anitha Joseph", "block": "Tagore Block", "dept_email": "english@aiuniversity.example"},
+    "dept_economics": {"is_a": "Department", "type": "instance", "name": "Department of Economics", "hod": "Dr. M. Senthil Kumar", "block": "Tagore Block", "dept_email": "economics@aiuniversity.example"},
+    "dept_maths": {"is_a": "Department", "type": "instance", "name": "Department of Mathematics", "hod": "Dr. K. Srinivasan", "block": "Raman Block", "dept_email": "maths@aiuniversity.example"},
+    "dept_research": {"is_a": "Department", "type": "instance", "name": "Centre for Research", "hod": "Dr. P. Subramanian (Dean of Research)", "block": "Raman Block", "dept_email": "research@aiuniversity.example"},
 
     "Facility": {"is_a": "University", "type": "class"},
     "hostel": {"is_a": "Facility", "type": "instance", "name": "Hostel",
@@ -151,13 +250,101 @@
       "description": "AI and GPU computing lab, IoT lab, robotics lab, VLSI lab and CNC workshop."},
 
     "admission_process": {"is_a": "University", "type": "instance",
-      "steps": ["Register and fill the online application at www.greenfield-univ.example/apply", "Pay the application fee of Rs. 1,000", "Appear for the entrance exam (JEE Main / GUET for UG; GATE, CAT, TANCET or GUET-PG for PG)", "Attend counselling and document verification", "Pay the first-year fee to confirm your seat"],
+      "steps": ["Register and fill the online application at www.aiuniversity.example/apply", "Pay the application fee of Rs. 1,000", "Appear for the entrance exam (JEE Main / GUET for UG; GATE, CAT, TANCET or GUET-PG for PG)", "Attend counselling and document verification", "Pay the first-year fee to confirm your seat"],
       "guet_date": "20 April 2027", "applications_open": "1 January 2027"},
 
     "scholarship_policy": {"is_a": "University", "type": "instance",
       "merit": [{"min": 95, "waiver": 50}, {"min": 90, "waiver": 30}, {"min": 85, "waiver": 15}],
       "sports_waiver": 25, "sibling_waiver": 10, "max_waiver": 60,
-      "government": "SC/ST/BC students can apply for Tamil Nadu post-matric government scholarships; the university helps with the paperwork."}
+      "government": "SC/ST/BC students can apply for Tamil Nadu post-matric government scholarships; the university helps with the paperwork."},
+
+    "Office": {"is_a": "University", "type": "class", "office_hours": "Monday to Friday, 9:30 AM to 5:30 PM"},
+    "office_admissions": {"is_a": "Office", "type": "instance", "name": "Admissions Office", "head": "Mr. S. Kumar (Director of Admissions)",
+      "location": "Administrative Block, ground floor", "phone": "+91 44 2345 6789", "email": "admissions@aiuniversity.example",
+      "office_hours": "Monday to Saturday, 9:00 AM to 5:00 PM", "handles": "applications, entrance exams, counselling and seat allotment"},
+    "office_registrar": {"is_a": "Office", "type": "instance", "name": "Office of the Registrar", "head": "Dr. V. Shankar (Registrar)",
+      "location": "Administrative Block, first floor", "phone": "+91 44 2345 6701", "email": "registrar@aiuniversity.example",
+      "handles": "certificates (bonafide, transcript, migration, transfer), student records, ID cards and the convocation"},
+    "office_coe": {"is_a": "Office", "type": "instance", "name": "Office of the Controller of Examinations (Exam Cell)", "head": "Dr. L. Prabhu (Controller of Examinations)",
+      "location": "Examination Block", "phone": "+91 44 2345 6702", "email": "coe@aiuniversity.example",
+      "handles": "exam timetables, hall tickets, results, revaluation, supplementary exams and grade sheets"},
+    "office_accounts": {"is_a": "Office", "type": "instance", "name": "Accounts Office", "head": "Mrs. R. Geetha (Finance Officer)",
+      "location": "Administrative Block, ground floor", "phone": "+91 44 2345 6703", "email": "accounts@aiuniversity.example",
+      "office_hours": "Monday to Saturday, 9:30 AM to 4:00 PM", "handles": "fee payment, receipts, refunds, scholarship payments and fee-structure letters for bank loans"},
+    "office_dsw": {"is_a": "Office", "type": "instance", "name": "Office of the Dean of Students (Student Welfare)", "head": "Dr. P. Meenakshi (Dean of Students)",
+      "location": "Student Activity Centre", "phone": "+91 44 2345 6704", "email": "dsw@aiuniversity.example",
+      "handles": "clubs, events, student counselling, grievances, anti-ragging and discipline"},
+    "office_hostel": {"is_a": "Office", "type": "instance", "name": "Hostel Office", "head": "Dr. T. Ravi (Chief Warden)",
+      "location": "Hostel Block A", "phone": "+91 44 2345 6705", "email": "hostel@aiuniversity.example",
+      "office_hours": "8:00 AM to 8:00 PM, all days", "handles": "hostel admission, room allotment, mess, and leave and outing permission"},
+    "office_placement": {"is_a": "Office", "type": "instance", "name": "Training and Placement Cell", "head": "Mr. K. Arun Kumar (Placement Officer)",
+      "location": "Knowledge Centre, second floor", "phone": "+91 44 2345 6706", "email": "placement@aiuniversity.example",
+      "handles": "campus placements, internships, training and career guidance"},
+    "office_international": {"is_a": "Office", "type": "instance", "name": "International Relations Office", "head": "Dr. S. Fatima (Director, International Relations)",
+      "location": "Administrative Block, second floor", "phone": "+91 44 2345 6707", "email": "international@aiuniversity.example",
+      "handles": "admission of international students, visas and semester-exchange programmes"},
+    "office_it": {"is_a": "Office", "type": "instance", "name": "IT Helpdesk", "head": "Mr. J. Vimal (IT Manager)",
+      "location": "Knowledge Centre, ground floor", "phone": "+91 44 2345 6708", "email": "helpdesk@aiuniversity.example",
+      "office_hours": "8:00 AM to 8:00 PM, Monday to Saturday", "handles": "student portal login, university e-mail and campus Wi-Fi access"},
+
+    "Certificate": {"is_a": "University", "type": "class", "office": "office_registrar",
+      "how": "Apply on the student portal (Services > Certificates) or at the Registrar's office"},
+    "cert_bonafide": {"is_a": "Certificate", "type": "instance", "name": "Bonafide certificate", "fee": 100, "time": "1 working day"},
+    "cert_conduct": {"is_a": "Certificate", "type": "instance", "name": "Conduct certificate", "fee": 100, "time": "1 working day"},
+    "cert_transcript": {"is_a": "Certificate", "type": "instance", "name": "Transcript", "fee": 1000, "time": "7 working days",
+      "note": "The fee is per set of sealed copies; extra copies cost Rs. 200 each."},
+    "cert_tc": {"is_a": "Certificate", "type": "instance", "name": "Transfer certificate (TC)", "fee": 0, "time": "3 working days",
+      "note": "It is issued after the no-dues clearance from the library, hostel and accounts office."},
+    "cert_migration": {"is_a": "Certificate", "type": "instance", "name": "Migration certificate", "fee": 500, "time": "5 working days"},
+    "cert_provisional": {"is_a": "Certificate", "type": "instance", "name": "Provisional degree certificate", "fee": 500, "time": "within 30 days of the final results",
+      "office": "office_coe", "note": "The original degree certificate is given at the convocation."},
+    "cert_id_card": {"is_a": "Certificate", "type": "instance", "name": "Duplicate ID card", "fee": 300, "time": "2 working days",
+      "note": "First report the lost card to the campus security office."},
+
+    "academic_calendar": {"is_a": "University", "type": "instance",
+      "odd_semester": "classes from 21 July 2026 to 14 November 2026, end-semester exams from 18 November to 5 December 2026",
+      "winter_vacation": "7 December 2026 to 3 January 2027",
+      "even_semester": "classes from 5 January 2027 to 24 April 2027, end-semester exams from 28 April to 15 May 2027",
+      "summer_vacation": "17 May 2027 to 18 July 2027",
+      "holidays": "Pongal (14 to 16 January), Republic Day (26 January), Tamil New Year (14 April), May Day (1 May), Independence Day (15 August), Gandhi Jayanti (2 October), Deepavali (8 November 2026) and Christmas (25 December)",
+      "working_days": "Monday to Friday, and the first and third Saturdays of each month",
+      "class_timings": "8:30 AM to 4:00 PM, with lunch from 12:30 PM to 1:30 PM"},
+
+    "examinations": {"is_a": "University", "type": "instance", "office": "office_coe",
+      "pattern": "Each course has 40 marks of internal assessment (two cycle tests, assignments and attendance) and a 60-mark end-semester exam",
+      "pass_rule": "To pass a course you need at least 50% overall and at least 45% in the end-semester exam",
+      "timetable": "The exam timetable is published on the student portal and notice boards three weeks before the exams",
+      "hall_ticket": "Hall tickets are released on the student portal one week before the exams, only for students with at least 75% attendance and no fee dues",
+      "grades": [["O", "91-100", 10], ["A+", "81-90", 9], ["A", "71-80", 8], ["B+", "61-70", 7], ["B", "56-60", 6], ["C", "50-55", 5], ["RA (re-appear)", "below 50", 0]],
+      "cgpa": "CGPA is the credit-weighted average of the grade points of all courses passed. To convert it to a percentage, multiply by 9.5",
+      "results": "Results are published on the student portal about four weeks after the last exam",
+      "revaluation": "Apply on the portal within 7 days of the results. Revaluation costs Rs. 500 per course and a photocopy of the answer script Rs. 300",
+      "supplementary": "Failed courses (arrears) can be written again with the next end-semester exams for Rs. 600 per course. Final-year students also get an instant supplementary exam within a month of the results"},
+
+    "fee_payment": {"is_a": "University", "type": "instance", "office": "office_accounts",
+      "modes": "online on the student portal (UPI, net banking, debit or credit card), or by demand draft in favour of 'AI University' payable at Chennai",
+      "due_dates": "15 July for the odd semester and 20 December for the even semester",
+      "late_fee": "Rs. 100 per day after the due date, up to Rs. 5,000. Students with unpaid fees do not get a hall ticket",
+      "instalments": "Tuition can be paid in two instalments per semester if you request it from the Finance Officer",
+      "receipt": "A receipt is generated on the portal immediately; a signed copy can be collected from the Accounts Office"},
+
+    "events": {"is_a": "University", "type": "instance", "office": "office_dsw",
+      "tech_fest": "Techno AI, the national technical fest, every March",
+      "cultural_fest": "AIU Fest, the cultural fest, every February",
+      "sports_meet": "the Annual Sports Meet, every January",
+      "convocation": "every August; the 2027 convocation is planned for 21 August 2027",
+      "other": "Hackathons, guest lectures, workshops and club events are announced on the student portal"},
+
+    "research": {"is_a": "University", "type": "instance",
+      "centres": "Centre for Artificial Intelligence, Centre for IoT and Embedded Systems, Centre for Sustainable Energy and Centre for Business Analytics",
+      "projects": "45 funded research projects worth Rs. 18 crore from DST, SERB and AICTE",
+      "output": "over 600 Scopus-indexed papers in the last three years and 32 patents filed"},
+
+    "alumni": {"is_a": "University", "type": "instance",
+      "association": "the AI University Alumni Association, with over 25,000 members",
+      "contact": "alumni@aiuniversity.example",
+      "meet": "the annual alumni meet in December",
+      "benefits": "Alumni can request transcripts and certificates online, use the library, and attend placement drives for two years after graduating"}
   },
 
   "program_aliases": {
@@ -169,15 +356,94 @@
     "mtech_ds":   ["mtech ds", "mtech data science", "mtech in data science", "data science"],
     "mba":        ["mba", "master of business administration", "business administration", "management"],
     "mca":        ["mca", "master of computer applications", "computer applications"],
-    "phd":        ["phd", "doctorate", "doctoral", "research program", "research"]
+    "phd":        ["phd", "doctorate", "doctoral", "research program", "research"],
+    "bsc_cs":     ["bsc cs", "bsc computer science", "bsc in computer science"],
+    "bca":        ["bca", "bachelor of computer applications"],
+    "bsc_maths":  ["bsc maths", "bsc mathematics", "bsc in mathematics"],
+    "bcom":       ["bcom", "bachelor of commerce", "commerce"],
+    "bba":        ["bba", "bachelor of business administration"],
+    "ba_english": ["ba english", "ba in english", "english literature"],
+    "ba_economics": ["ba economics", "ba in economics", "economics"],
+    "mba_ba":     ["mba business analytics", "mba analytics", "business analytics"],
+    "mba_finance": ["mba finance", "mba in finance", "finance"],
+    "mcom":       ["mcom", "master of commerce"],
+    "ma_english": ["ma english", "ma in english", "master of arts english"]
   },
 
   "department_aliases": {
     "dept_cse":  ["cse department", "computer science department", "cse dept", "cse"],
+    "dept_aids": ["ai department", "ai dept", "ai and ds department", "ai ds department", "aids department", "artificial intelligence department", "data science department", "ds department", "ds dept", "artificial intelligence and data science", "artificial intelligence", "data science", "ai ds", "aids", "ai", "ds"],
     "dept_ece":  ["ece department", "electronics department", "ece dept", "ece"],
     "dept_mech": ["mechanical department", "mech department", "mech dept", "mechanical", "mech"],
     "dept_mgmt": ["management department", "school of management", "mba department", "management"],
-    "dept_mca":  ["mca department", "computer applications department"],
+    "dept_mca":  ["mca department", "computer applications department", "computer applications"],
+    "dept_commerce": ["commerce department", "commerce dept", "department of commerce", "commerce"],
+    "dept_english": ["english department", "english dept", "department of english", "english"],
+    "dept_economics": ["economics department", "economics dept", "department of economics", "economics"],
+    "dept_maths": ["mathematics department", "maths department", "math department", "maths dept", "department of mathematics", "mathematics", "maths"],
     "dept_research": ["research centre", "research center", "centre for research"]
+  },
+
+  "office_aliases": {
+    "office_registrar": ["registrar", "registrar office"],
+    "office_coe": ["controller of examinations", "controller of exams", "exam cell", "examination cell", "coe", "exam office"],
+    "office_accounts": ["accounts office", "accounts section", "accounts department", "finance officer", "accounts"],
+    "office_dsw": ["dean of students", "student welfare", "dsw", "student affairs", "grievance cell"],
+    "office_hostel": ["chief warden", "warden", "hostel office"],
+    "office_placement": ["placement cell", "placement office", "placement officer", "training and placement"],
+    "office_international": ["international relations", "international office", "international students", "foreign students"],
+    "office_it": ["it helpdesk", "helpdesk", "help desk", "it support", "student portal", "log in", "login"],
+    "office_admissions": ["admissions office", "admission office"]
+  },
+
+  "certificate_aliases": {
+    "cert_bonafide": ["bonafide", "bona fide", "study certificate"],
+    "cert_conduct": ["conduct certificate", "character certificate"],
+    "cert_transcript": ["transcript", "transcripts"],
+    "cert_tc": ["transfer certificate", "tc"],
+    "cert_migration": ["migration certificate", "migration"],
+    "cert_provisional": ["provisional certificate", "provisional degree", "degree certificate", "provisional"],
+    "cert_id_card": ["id card", "identity card", "duplicate id"]
+  },
+
+  "_comment_closed_world": "Closed-world assumption: a department or programme that is not a frame above is not offered. The lists below only help the chatbot recognise such questions (and questions about other institutions) so that it can say so instead of guessing.",
+  "not_offered": [
+    {"name": "Civil Engineering", "aliases": ["civil"]},
+    {"name": "Computer Science and Business Systems", "aliases": ["csbs", "computer science and business systems", "business systems"]},
+    {"name": "Cyber Security", "aliases": ["cyber security", "cybersecurity"]},
+    {"name": "Electrical and Electronics Engineering", "aliases": ["eee", "electrical engineering", "electrical and electronics", "electrical department", "btech electrical"]},
+    {"name": "Information Technology", "aliases": ["information technology", "btech it", "it department"]},
+    {"name": "Aeronautical Engineering", "aliases": ["aeronautical", "aeronautics", "aerospace"]},
+    {"name": "Automobile Engineering", "aliases": ["automobile", "automotive"]},
+    {"name": "Biotechnology", "aliases": ["biotech", "biotechnology"]},
+    {"name": "Biomedical Engineering", "aliases": ["biomedical"]},
+    {"name": "Chemical Engineering", "aliases": ["chemical engineering"]},
+    {"name": "Physics", "aliases": ["physics department", "physics dept", "bsc physics", "msc physics"]},
+    {"name": "Chemistry", "aliases": ["chemistry department", "chemistry dept", "bsc chemistry", "msc chemistry"]},
+    {"name": "Law", "aliases": ["law", "llb", "ba llb"]},
+    {"name": "Medicine", "aliases": ["mbbs", "medicine", "medical", "bds", "dental"],
+     "unless": ["medical facility", "medical facilities", "medical centre", "medical center", "medical certificate", "medical emergency", "medical help", "medical insurance", "medical leave", "medical fitness", "medical room", "medical care", "medical aid"]},
+    {"name": "Pharmacy", "aliases": ["pharmacy", "pharm", "b pharm", "m pharm"]},
+    {"name": "Nursing", "aliases": ["nursing"]},
+    {"name": "Architecture", "aliases": ["architecture", "b arch"]},
+    {"name": "Agriculture", "aliases": ["agriculture", "agricultural"]},
+    {"name": "Psychology", "aliases": ["psychology"]},
+    {"name": "Journalism and Mass Communication", "aliases": ["journalism", "mass communication", "visual communication"]},
+    {"name": "Hotel Management", "aliases": ["hotel management", "catering", "hospitality"]},
+    {"name": "Fashion Design", "aliases": ["fashion"]},
+    {"name": "Tamil", "aliases": ["tamil department", "ba tamil", "ma tamil"]},
+    {"name": "History", "aliases": ["history department", "ba history", "ma history"]}
+  ],
+  "other_institutions": {
+    "srm": "SRM", "vit": "VIT", "anna university": "Anna University", "iit": "IIT", "iits": "IIT", "nit": "NIT",
+    "nits": "NIT", "iiit": "IIIT", "bits": "BITS Pilani", "amrita": "Amrita", "sastra": "SASTRA", "psg": "PSG",
+    "ssn": "SSN", "sathyabama": "Sathyabama", "saveetha": "Saveetha", "vels": "Vels", "hindustan": "Hindustan",
+    "karunya": "Karunya", "manipal": "Manipal", "christ university": "Christ University", "loyola": "Loyola",
+    "madras university": "University of Madras", "university of madras": "University of Madras",
+    "kumaraguru": "Kumaraguru", "kct": "KCT", "rajalakshmi": "Rajalakshmi", "panimalar": "Panimalar",
+    "crescent": "Crescent", "kalasalingam": "Kalasalingam", "annamalai": "Annamalai University",
+    "bharathiar": "Bharathiar University", "bharathidasan": "Bharathidasan University", "stella maris": "Stella Maris",
+    "presidency": "Presidency", "jntu": "JNTU", "osmania": "Osmania University", "amity": "Amity", "lpu": "LPU",
+    "mit": "MIT", "harvard": "Harvard", "stanford": "Stanford", "oxford": "Oxford", "cambridge": "Cambridge"
   }
 }

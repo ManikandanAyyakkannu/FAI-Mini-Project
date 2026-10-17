@@ -26,6 +26,11 @@ class KnowledgeBase:
         self.frames: dict[str, dict[str, Any]] = raw["frames"]
         self.program_aliases: dict[str, list[str]] = raw["program_aliases"]
         self.department_aliases: dict[str, list[str]] = raw["department_aliases"]
+        self.office_aliases: dict[str, list[str]] = raw.get("office_aliases", {})
+        self.certificate_aliases: dict[str, list[str]] = raw.get("certificate_aliases", {})
+        # closed world: subjects the university does not offer, and names of other institutions
+        self.not_offered: list[dict[str, Any]] = raw.get("not_offered", [])
+        self.other_institutions: dict[str, str] = raw.get("other_institutions", {})
 
     # ------------------------------------------------------------------ frames
     def ancestors(self, frame_id: str) -> list[str]:

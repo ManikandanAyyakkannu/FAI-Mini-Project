@@ -56,6 +56,21 @@ def build_faq(kb) -> list[dict]:
     add("contact", "contact", ["How can I contact the admissions office?"], A.contact())
     add("about_university", "about_university", ["Tell me about the university."], A.about())
 
+    # university life beyond admissions
+    add("academic_calendar", "academic_calendar", ["What is the academic calendar? When do semesters and vacations start?"],
+        A.academic_calendar(set()))
+    add("examination", "examination", ["When are the end-semester exams and what is the exam pattern?"], A.examination(set()))
+    add("results", "results", ["When are the results published and how do I apply for revaluation?"], A.results(set()))
+    add("fee_payment", "fee_payment", ["How and when do I pay the semester fee?"], A.fee_payment(set()))
+    for c in kb.instances_of("Certificate"):
+        add(f"certificates:{c}", "certificates", [f"How do I get a {kb.get(c, 'name').lower()}?"], A.certificate(c))
+    for o in kb.instances_of("Office"):
+        add(f"office_info:{o}", "office_info", [f"How can I contact the {kb.get(o, 'name').split(' (')[0]}?"], A.office(o))
+    add("faculty_research", "faculty_research", ["How many faculty members are there, and what research is done?"],
+        A.faculty_research(set()))
+    add("events", "events", ["What is the date of the convocation and the cultural and technical events?"], A.events(set()))
+    add("alumni", "alumni", ["Is there an alumni association?"], A.alumni())
+
     with open(DATA_DIR / "faq_extra.json", encoding="utf-8") as f:
         for item in json.load(f)["faqs"]:
             add(item["key"], "faq", [item["question"]], item["answer"])

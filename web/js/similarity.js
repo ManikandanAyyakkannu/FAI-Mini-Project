@@ -53,18 +53,27 @@ function commonLetters(a, b) {
 }
 
 // Returns the most similar candidate whose similarity is at least `cutoff`, or null.
-export function closestWord(word, candidates, cutoff) {
-  let best = null, bestScore = -1;
+// Among equally close candidates a word from `preferred` wins ("fess" -> "fees", not "fest").
+export function closestWord(word, candidates, cutoff, preferred = new Set()) {
+  const found = [];
   for (const cand of candidates) {
     const total = cand.length + word.length;
     // two cheap upper bounds first, then the real score
     if (2 * Math.min(cand.length, word.length) / total < cutoff) continue;
     if (2 * commonLetters(cand, word) / total < cutoff) continue;
     const score = 2 * matchingCharacters(cand, word) / total;
-    if (score < cutoff) continue;
-    if (score > bestScore || (score === bestScore && cand > best)) { best = cand; bestScore = score; }
+    if (score >= cutoff) found.push([score, cand]);
   }
-  return best;
+  if (!found.length) return null;
+  // the 10 closest (like difflib.get_close_matches), then the preferred word on a tie
+  found.sort((a, b) => b[0] - a[0] || (a[1] < b[1] ? 1 : a[1] > b[1] ? -1 : 0));
+  let best = null;
+  for (const [score, cand] of found.slice(0, 10)) {
+    const key = [score, preferred.has(cand) ? 1 : 0, cand];
+    if (best === null || key[0] > best[0] || (key[0] === best[0] && (key[1] > best[1] ||
+        (key[1] === best[1] && key[2] > best[2])))) best = key;
+  }
+  return best[2];
 }
 
 // ---------------------------------------------------------------- 2. TF-IDF

@@ -58,7 +58,7 @@
       "keywords": ["placement"]
     },
     "department_info": {
-      "examples": ["who is the hod of cse", "head of the ece department", "where is the mechanical department", "tell me about the cse department", "which department offers mtech ai"],
+      "examples": ["who is the hod of cse", "head of the ece department", "where is the mechanical department", "tell me about the cse department", "which department offers mtech ai", "list all departments", "what departments are there", "which departments do you have", "how many departments are there"],
       "keywords": ["hod", "head"]
     },
     "facility": {
@@ -72,12 +72,48 @@
     "about_university": {
       "examples": ["tell me about the university", "when was the university established", "is the university accredited", "naac grade"],
       "keywords": ["established", "accredited", "naac", "accreditation"]
+    },
+    "academic_calendar": {
+      "examples": ["when does the semester start", "academic calendar", "holiday list", "when is the winter vacation", "when do classes begin after vacation", "what are the class timings", "is saturday a working day", "when does the even semester end", "summer holidays", "when does the college reopen after the vacation", "what time do classes end each day", "are there classes on saturday"],
+      "keywords": ["calendar", "holiday", "vacation", "working day", "class timing", "saturday"]
+    },
+    "examination": {
+      "examples": ["when are the end semester exams", "exam timetable", "how are internal marks calculated", "when will i get my hall ticket", "what is the pass mark", "what is the grading system", "how is cgpa calculated", "exam pattern for semester exams"],
+      "keywords": ["hall ticket", "internal", "grade", "grading", "timetable", "pass mark", "semester exam", "cycle test"]
+    },
+    "results": {
+      "examples": ["when will the results be published", "how to check my semester results", "how to apply for revaluation", "supplementary exam fee", "arrear exam", "what happens if i fail a subject", "photocopy of answer script"],
+      "keywords": ["result", "revaluation", "supplementary", "arrear", "fail", "reappear"]
+    },
+    "fee_payment": {
+      "examples": ["how do i pay my semester fee", "fee payment due date for current students", "late fee for paying fees late", "can i pay the fees in instalments", "how to get the fee receipt", "pay fees online through the portal"],
+      "keywords": ["instalment", "installment", "receipt", "late fee", "due date", "online payment", "demand draft"]
+    },
+    "certificates": {
+      "examples": ["how to get a bonafide certificate", "apply for transcripts", "how do i get my tc", "migration certificate", "i lost my id card", "provisional certificate after final semester", "conduct certificate"],
+      "keywords": ["bonafide", "transcript", "migration", "tc", "provisional", "conduct certificate", "id card"]
+    },
+    "office_info": {
+      "examples": ["who is the registrar", "where is the exam cell", "contact number of the controller of examinations", "accounts office timings", "who is the dean of students", "who is the chief warden", "placement cell contact", "where is the it helpdesk", "who is the vice chancellor"],
+      "keywords": ["registrar", "exam cell", "controller", "accounts office", "dean", "warden", "helpdesk", "vice chancellor"]
+    },
+    "faculty_research": {
+      "examples": ["how many faculty members are there", "faculty qualifications", "what research centres are there", "funded research projects", "patents and publications", "student teacher ratio"],
+      "keywords": ["faculty", "professor", "research centre", "publication", "patent", "funded"]
+    },
+    "events": {
+      "examples": ["when is the tech fest", "when is the cultural fest", "when is the convocation", "what events happen on campus", "annual sports meet", "are there hackathons"],
+      "keywords": ["fest", "convocation", "event", "hackathon", "festival", "sports meet"]
+    },
+    "alumni": {
+      "examples": ["is there an alumni association", "alumni meet", "how can alumni get certificates", "how many alumni are there"],
+      "keywords": ["alumni", "alumnus"]
     }
   },
 
   "smalltalk_responses": {
-    "greeting": "Hello! I am the Greenfield University enquiry assistant. Ask me about programmes, fees, eligibility, admissions, hostel, scholarships or placements.",
-    "goodbye": "Goodbye! All the best for your admission. You can reach the admissions office at +91 44 2345 6789.",
+    "greeting": "Hello! I am the AI University enquiry assistant. Ask me anything about the university: admissions and programmes, fees, exams and results, the academic calendar, certificates, offices, hostel, placements or events.",
+    "goodbye": "Goodbye! Have a great day. You can reach the university at +91 44 2345 6789.",
     "thanks": "You're welcome! Is there anything else you would like to know?"
   }
 }

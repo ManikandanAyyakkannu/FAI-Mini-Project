@@ -19,7 +19,7 @@
 </head>
 <body>
 <h1>Chatbot test run</h1>
-<p class="muted">Runs every question in <code>data/test_queries.csv</code> and <code>data/test_queries_holdout.csv</code> through the chatbot and checks the answer.
+<p class="muted">Runs every question in the four test sets in <code>data/</code> (admissions: main and held-out; university services: development and held-out) through the chatbot and checks the answer.
 Questions with the same conversation id are asked in one conversation.</p>
 <div id="summary" class="summary">Running…</div>
 <table>
@@ -56,8 +56,8 @@ function parseCsv(text) {
 
 const bot = await loadChatbot("../data/");
 const results = [];
-for (const file of ["test_queries.csv", "test_queries_holdout.csv"]) {
-  const tests = parseCsv(await (await fetch("../data/" + file)).text());
+for (const file of ["test_queries.csv", "test_queries_holdout.csv", "test_queries_services.csv", "test_queries_services_holdout.csv"]) {
+  const tests = parseCsv(await (await fetch("../data/" + file, { cache: "no-cache" })).text());
   const sessions = {};
   for (const t of tests) {
     const session = t.conv_id ? (sessions[t.conv_id] ||= newSession()) : newSession();
@@ -68,7 +68,8 @@ for (const file of ["test_queries.csv", "test_queries_holdout.csv"]) {
   }
 }
 
-const sets = { "test_queries.csv": "Main test set", "test_queries_holdout.csv": "Held-out set" };
+const sets = { "test_queries.csv": "Admissions - main", "test_queries_holdout.csv": "Admissions - held-out",
+  "test_queries_services.csv": "University services - development", "test_queries_services_holdout.csv": "University services - held-out" };
 const summary = document.getElementById("summary");
 summary.innerHTML = "";
 for (const [file, label] of Object.entries(sets)) {

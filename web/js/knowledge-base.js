@@ -10,6 +10,11 @@ export class KnowledgeBase {
     this.frames = data.frames;
     this.programAliases = data.program_aliases;
     this.departmentAliases = data.department_aliases;
+    this.officeAliases = data.office_aliases || {};
+    this.certificateAliases = data.certificate_aliases || {};
+    // closed world: subjects the university does not offer, and names of other institutions
+    this.notOffered = data.not_offered || [];
+    this.otherInstitutions = data.other_institutions || {};
   }
 
   // the is_a chain of a frame, nearest parent first

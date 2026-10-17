@@ -1,0 +1,41 @@
+id,conv_id,category,query,expected_intent,expected_key
+S01,,calendar,When do classes begin for the odd semester?,academic_calendar,academic_calendar
+S02,,calendar,Is Pongal a holiday?,academic_calendar,academic_calendar
+S03,,calendar,how long is the summer vacation,academic_calendar,academic_calendar
+S04,,calendar,What time do classes finish every day?,academic_calendar,academic_calendar
+S05,,calendar,Do we have classes on Saturdays?,academic_calendar,academic_calendar
+S06,,exams,When do the end sem exams start?,examination,examination
+S07,,exams,How many marks are internal?,examination,examination
+S08,,exams,My hall ticket is not showing on the portal,examination,examination
+S09,,exams,What grade do I get for 85 marks?,examination,examination
+S10,,exams,minimum marks to pass a subject,examination,examination
+S11,,results,When are the semester results announced?,results,results
+S12,,results,I want to apply for re evaluation of my paper,results,results
+S13,,results,how to clear arrears,results,results
+S14,,results,Can I get a photocopy of my answer sheet?,results,results
+S15,,fees_payment,What is the last date to pay the semester fees?,fee_payment,fee_payment
+S16,,fees_payment,Can I pay the fees by demand draft?,fee_payment,fee_payment
+S17,,fees_payment,What happens if I pay my fees late?,fee_payment,fee_payment
+S18,,fees_payment,I need my fee reciept,fee_payment,fee_payment
+S19,,certificates,How can I get a bonafide for my bank loan?,certificates,certificates:cert_bonafide
+S20,,certificates,What is the fee for a transcript?,certificates,certificates:cert_transcript
+S21,,certificates,I need my transfer certificate,certificates,certificates:cert_tc
+S22,,certificates,I lost my identity card,certificates,certificates:cert_id_card
+S23,,certificates,When will I get my provisional certificate?,certificates,certificates:cert_provisional
+S24,,offices,Who is the controller of exams?,office_info,office_info:office_coe
+S25,,offices,Where is the registrar office?,office_info,office_info:office_registrar
+S26,,offices,phone number of the accounts section,office_info,office_info:office_accounts
+S27,,offices,whom should I contact for hostel room change,office_info,office_info:office_hostel
+S28,,offices,I cannot log in to the student portal,office_info,office_info:office_it
+S29,,offices,Who is the VC of the university?,office_info,office_info:vice_chancellor
+S30,,research,How many professors have a PhD?,faculty_research,faculty_research
+S31,,research,What research is done at the university?,faculty_research,faculty_research
+S32,,events,When is the cultural fest this year?,events,events
+S33,,events,What is the convocation date?,events,events
+S34,,events,Are there any technical events?,events,events
+S35,,alumni,How do I join the alumni network?,alumni,alumni
+S36,G1,conversation,What is the late fee for semester fees?,fee_payment,fee_payment
+S37,G1,conversation,Which office handles it?,office_info,office_info:office_accounts|fee_payment
+S38,G2,conversation,Who is the controller of examinations?,office_info,office_info:office_coe
+S39,G2,conversation,when are the results published?,results,results
+S40,,calendar,whn is diwali holiday,academic_calendar,academic_calendar
