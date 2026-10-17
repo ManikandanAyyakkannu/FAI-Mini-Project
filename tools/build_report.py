@@ -49,22 +49,21 @@ r1 = retrieval_recall_at_k(hybrid.store, hybrid.pre, test, 1)
 r3 = retrieval_recall_at_k(hybrid.store, hybrid.pre, test, 3)
 lat = res["Hybrid KR + NLP (proposed)"].latency_ms
 
-# demo transcript (terminal chatbot, same engine)
+# sample conversation for Section 9 (the website gives exactly the same answers)
+SOURCE_NAME = {"knowledge_base": "frame knowledge base", "rule_engine": "rule-based reasoning",
+               "vector_store": "vector-store search", "dialogue": "dialogue manager",
+               "smalltalk": "small talk", "fallback": "out of scope"}
 demo_bot = UniversityChatbot()
 s = demo_bot.new_session()
 demo_lines = []
 for q in ["What is the fee for M.Tech AI?", "How long is it?", "What about MBA?", "Am I eligible for M.Tech AI?",
-          "I did B.E ECE with 6.8 CGPA and I qualified GATE", "/why",
+          "I did B.E ECE with 6.8 CGPA and I qualified GATE",
           "I scored 96% in 12th and I am a state level athlete. What will my fee be for B.Tech CSE?",
           "hostle fees for girls?", "Is the campus ragging free?", "Who won the cricket match yesterday?"]:
-    if q == "/why":
-        demo_lines.append("You: /why")
-        demo_lines += ["  " + t for t in last.trace if t.startswith("[") or t.startswith("Forward")]
-        continue
     last = demo_bot.respond(q, s)
     demo_lines.append(f"You: {q}")
     demo_lines.append(f"Bot: {last.text}")
-    demo_lines.append(f"     [{last.intent} | {last.source} | {last.confidence:.2f}]")
+    demo_lines.append(f"     (answered by: {SOURCE_NAME[last.source]})")
 
 # -------------------------------------------------------------- helpers
 doc = Document()
@@ -228,33 +227,9 @@ def page_break():
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
 
 
-# running header and page numbers (not shown on the cover page)
-sec.different_first_page_header_footer = True
-hp = sec.header.paragraphs[0]
-hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-hr = hp.add_run("AI-Based University Enquiry Chatbot  |  Mini Project Report")
-hr.font.size = Pt(8.5)
-hr.font.color.rgb = GREY
-pbdr = OxmlElement("w:pBdr")
-bottom = OxmlElement("w:bottom")
-for k, v in (("w:val", "single"), ("w:sz", "4"), ("w:space", "1"), ("w:color", "A0AEC0")):
-    bottom.set(qn(k), v)
-pbdr.append(bottom)
-hp._p.get_or_add_pPr().append(pbdr)
-fp = sec.footer.paragraphs[0]
-fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-for kind, txt in (("begin", None), (None, "PAGE"), ("end", None)):
-    run = fp.add_run()
-    if kind:
-        el = OxmlElement("w:fldChar")
-        el.set(qn("w:fldCharType"), kind)
-    else:
-        el = OxmlElement("w:instrText")
-        el.set(qn("xml:space"), "preserve")
-        el.text = txt
-    run._r.append(el)
-    run.font.size = Pt(9)
-    run.font.color.rgb = GREY
+DEMO_URL = "https://manikandanayyakkannu.github.io/FAI-Mini-Project/"
+
+# no running header or footer: the pages are kept plain
 
 # ================================================================ cover
 for _ in range(4):
@@ -296,23 +271,26 @@ para("Programme: M.Tech - Fundamentals of Artificial Intelligence", size=11, ali
 para("Date: October 2026", size=11, align=WD_ALIGN_PARAGRAPH.CENTER)
 for _ in range(4):
     doc.add_paragraph()
-para("Solution files submitted with this report: University_Enquiry_Chatbot.ipynb (solution notebook), chatbot/ (Python "
-     "package), chat_cli.py (terminal chatbot), app_streamlit.py (web demo), data/ (knowledge base, rules, test sets).",
+para(f"Live chatbot: {DEMO_URL}", size=10, color=BLUE, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=4)
+para("Submitted along with this report: the solution notebook (University_Enquiry_Chatbot.ipynb), the chatbot website "
+     "(index.html and web/), the Python engine (chatbot/) and the data files (data/).",
      size=9, color=GREY, align=WD_ALIGN_PARAGRAPH.CENTER)
 page_break()
 
 # ============================================================== contents
 p = para("Abstract", size=16, color=BLUE, space_after=8)
 p.runs[0].bold = True
-para(f"This project builds an enquiry chatbot for a fictional university. The chatbot answers questions about programmes, fees, "
-     f"eligibility, admissions, hostel, scholarships and placements. It combines a frame-based knowledge representation "
-     f"(a semantic network with inheritance), forward-chaining production rules for personalised reasoning, a natural-language "
-     f"processing pipeline, a dialogue manager and a vector-store retrieval fallback. On a labelled test set of {len(test)} "
-     f"queries the hybrid chatbot answered {pct(H['Answer accuracy'])} correctly (intent macro-F1 {H['Intent macro F1']:.2f}), "
-     f"against {pct(summ['NLP + vector retrieval']['Answer accuracy'])} for an NLP + vector-retrieval chatbot and "
-     f"{pct(summ['Keyword FAQ matching']['Answer accuracy'])} for a keyword FAQ-matching chatbot built on the same knowledge. "
-     f"On a held-out set evaluated once after development it reached {pct(HO['Answer accuracy'])}. Every answer is produced in "
-     f"a few milliseconds (mean {lat.mean():.1f} ms) on a laptop CPU, works offline and comes with an explanation trace.")
+para(f"In this project we built an enquiry chatbot for a fictional university, Greenfield University. Students can ask it "
+     f"about programmes, fees, eligibility, admissions, the hostel, scholarships and placements. The university data is stored "
+     f"as frames that inherit from each other (a small semantic network). Personal questions such as \"Am I eligible?\" or "
+     f"\"What will my fee be after the scholarship?\" are answered by forward-chaining production rules. In front of this sit "
+     f"an NLP pipeline, a dialogue manager for follow-up questions, and a vector store for FAQ topics that are not in the frames. "
+     f"We tested it on {len(test)} labelled questions. Our chatbot answered {pct(H['Answer accuracy'])} of them correctly "
+     f"(intent macro-F1 {H['Intent macro F1']:.2f}). On the same knowledge, an NLP + vector-retrieval chatbot managed "
+     f"{pct(summ['NLP + vector retrieval']['Answer accuracy'])} and a keyword FAQ-matching chatbot "
+     f"{pct(summ['Keyword FAQ matching']['Answer accuracy'])}. On a separate held-out set, which we ran only once at the end, "
+     f"it scored {pct(HO['Answer accuracy'])}. Answers take a few milliseconds (mean {lat.mean():.1f} ms) and every answer can "
+     f"be explained. The finished chatbot is a website that runs completely inside the browser, so anyone can try it from a link.")
 p = para("Keywords: ", size=10, space_after=0)
 p.runs[0].bold = True
 p.add_run("knowledge representation, frames, semantic network, forward chaining, production rules, natural language "
@@ -341,11 +319,11 @@ page_break()
 
 # ============================================================== 1
 doc.add_heading("1. Problem Definition", 1)
-para("Every admission season a university receives a very large number of repetitive enquiries by phone, e-mail and at the front "
-     "desk, such as \"What is the fee for B.Tech CSE?\", \"Am I eligible for M.Tech AI with 6.8 CGPA?\", \"When is the last "
-     "date to apply?\" and \"Is there a hostel for girls?\". Staff spend a lot of time answering the same questions. Answers "
-     "are not available outside office hours and are sometimes inconsistent between staff members.")
-para("The objective is an intelligent enquiry chatbot that:", space_after=3)
+para("During admission season a university's office gets the same questions again and again, by phone, by e-mail and at the "
+     "front desk: \"What is the fee for B.Tech CSE?\", \"Am I eligible for M.Tech AI with 6.8 CGPA?\", \"When is the last "
+     "date to apply?\", \"Is there a hostel for girls?\". Answering them takes up a lot of staff time. Nobody answers after "
+     "office hours, and two staff members do not always give the same answer.")
+para("Our aim was to build an enquiry chatbot that:", space_after=3)
 bullet("understands free-form English questions, including paraphrases, abbreviations (B.E, M.Tech, CGPA, plus two) and spelling mistakes;")
 bullet("answers factual questions from a structured knowledge base of the university;")
 bullet("reasons about personal questions, such as eligibility for a programme or the fee after scholarships, and explains every decision;")
@@ -353,8 +331,8 @@ bullet("follows the conversation (\"How long is it?\" after a question about M.T
 bullet("answers free-text FAQs (ragging, Wi-Fi, refunds) through semantic retrieval, and politely refuses out-of-scope questions.")
 para("Scope and assumptions: the knowledge base describes a fictional institution, \"Greenfield University\", with 9 programmes "
      "(B.Tech CSE, AI & DS, ECE and Mechanical; M.Tech AI and Data Science; MBA; MCA; Ph.D.), 6 departments, 5 facilities, the "
-     "admission process and the scholarship policy. All data is synthetic and created only for this project. The chatbot is "
-     "text-based, works in English and runs fully offline.", space_after=8)
+     "admission process and the scholarship policy. We made up all of this data for the project. The chatbot is "
+     "text-based, works in English and runs in any web browser without a server.", space_after=8)
 
 # ============================================================== 2
 doc.add_heading("2. AI Problem Formulation", 1)
@@ -393,15 +371,15 @@ figure(FIG / "fig_semantic_network.png", "Figure 1. Fragment of the frame-based 
 
 # ============================================================== 3
 doc.add_heading("3. Selection and Explanation of the AI Technique", 1)
-para("The topic asks for Knowledge Representation + NLP. The final design combines five classical AI components. Each was chosen "
-     "for a specific reason:")
+para("The suggested technique for this topic was Knowledge Representation + NLP. We ended up with five parts, each from "
+     "classical AI. The table says what each part does and why we picked it:")
 table(["Component", "Technique used", "Why it was chosen"], [
     ["Knowledge representation", "Frames with is_a inheritance, which also form a semantic network of (subject, predicate, object) triples",
      "University data is naturally hierarchical (Programme > UG/PG > B.Tech CSE). Inheritance stores duration, documents and deadlines once per class, so the KB is small and consistent."],
     ["Reasoning", "Production rules + forward chaining with refraction and an explanation trace",
      "Eligibility and scholarship policies are IF-THEN rules. Forward chaining is data-driven: it starts from the applicant's facts and derives the conclusion. Each fired rule becomes a sentence of explanation."],
     ["NLP", "Normalisation, tokenisation, spelling correction (edit-distance similarity), synonym mapping, stop-word removal, stemming, regex entity extraction, hybrid intent classifier",
-     "Transparent and explainable; needs only 109 example sentences; runs offline without a GPU; handles Indian academic abbreviations (B.E, M.Tech, CGPA, plus two)."],
+     "Easy to follow and explain; needs only 109 example sentences; no GPU or downloaded model; handles Indian academic abbreviations (B.E, M.Tech, CGPA, plus two)."],
     ["Retrieval fallback", "Vector store: TF-IDF word + character n-gram embeddings, cosine similarity, top-k search",
      "Free-text FAQ passages (ragging, Wi-Fi, refunds) are not worth modelling as frames. The embedder is pluggable, so a neural sentence embedding can be used without code changes."],
     ["Dialogue management", "Context memory + slot filling",
@@ -426,16 +404,17 @@ code_block(["[R1]  Converted CGPA 6.8 to 64.6% using the standard formula (CGPA 
             "[R14] Your GATE score is accepted for admission.",
             "[R16] Because you qualified GATE you are eligible for a stipend: Rs. 12,400 per month."])
 doc.add_heading("3.3 Why not a pure machine-learning or LLM chatbot?", 2)
-para("For admissions, answers must be exactly correct (fees, cut-offs), consistent and explainable. A knowledge-based system "
-     "guarantees that every answer can be traced to a frame slot or a rule. A large language model may produce wrong numbers "
-     "and cannot easily justify an eligibility decision. It would also need internet access or a GPU. The cost of the "
-     "knowledge-based approach is manual knowledge engineering, which is discussed in Section 8.")
+para("We did consider using a large language model, but decided against it. For admissions the numbers (fees, cut-offs) "
+     "have to be exactly right, the same every time, and explainable. In our system every answer can be traced back to a "
+     "frame slot or a rule. A language model can make up a fee or a cut-off, it cannot properly justify an eligibility "
+     "decision, and it needs a paid API or a GPU. Our approach has its own cost: someone has to write the knowledge "
+     "by hand. We discuss this in Section 8.")
 
 # ============================================================== 4
 doc.add_heading("4. Python Implementation", 1)
-para("The solution is a small, UI-independent Python 3.12 package. The same engine is used by the solution notebook, the "
-     "terminal chatbot (chat_cli.py) and the web demo (app_streamlit.py). Libraries: numpy, pandas, scikit-learn (TF-IDF, "
-     "metrics), matplotlib, and streamlit for the web demo. The NLP and reasoning components use only the Python standard library.")
+para("We first wrote the chatbot as a small Python 3.12 package. The solution notebook uses it for all the experiments, "
+     "and it was used to produce every number in this report. It needs numpy, pandas, scikit-learn (TF-IDF and metrics) "
+     "and matplotlib. The NLP and reasoning parts use only the Python standard library.")
 figure(FIG / "fig_architecture.png", "Figure 2. Architecture of the hybrid KR + NLP enquiry chatbot.", 16.4)
 table(["Module", "Responsibility"], [
     ["knowledge_base.py", "Frames, is_a inheritance (get, get_with_source, resolved), semantic-network triples and pattern queries"],
@@ -446,10 +425,24 @@ table(["Module", "Responsibility"], [
     ["answers.py / faq_builder.py", "Natural-language answer templates filled from frames; FAQ corpus for retrieval and the baselines"],
     ["engine.py", "UniversityChatbot: dialogue manager (context, slot filling), routing to KB / rules / vector store, trace"],
     ["baselines.py / evaluation.py", "Alternative approaches for comparison; test harness and metrics"],
-    ["chat_cli.py / app_streamlit.py", "Terminal chatbot (with /why explanations) and web demo"],
     ["data/*.json, data/*.csv", "Knowledge base (29 frames), rules (26), intents (18), free-text FAQs (15), test sets"]],
     [5.0, 11.4], font=9, bold_first_col=True)
-para("Processing steps for every message (UniversityChatbot.respond):", space_after=3)
+doc.add_heading("4.1 The chatbot website", 2)
+para("For the demonstration we wanted a link that anyone could open, with nothing to install and no terminal. So we "
+     "rewrote the same engine in plain JavaScript, one file for each Python module. It runs entirely inside the browser "
+     "and is hosted for free on GitHub Pages. There is no server and no API key, and both versions read the same data/*.json "
+     "files. To make sure the website behaves exactly like the Python version, we put all 154 test conversations through "
+     "both. The answers, intents, answer sources and confidence scores came out identical, so the results in Sections 6 "
+     "and 7 also hold for the website.")
+table(["File", "What it contains"], [
+    ["index.html", "The chat page: sample questions on the left, the conversation in the middle, the \"How I answered\" panel on the right"],
+    ["web/css/style.css", "Layout and colours (light and dark theme, works on phones)"],
+    ["web/js/knowledge-base.js, nlp.js, intent-classifier.js, reasoning.js, answers.js, similarity.js", "The engine, one file per Python module"],
+    ["web/js/chatbot.js", "Dialogue manager: decides whether the KB, the rules or the vector store answers"],
+    ["web/js/app.js", "Everything on the screen: messages, suggestions, explanation panel, guided demos"],
+    ["tests/engine-test.html", "Runs both test sets in the browser and shows the accuracy"]],
+    [6.4, 10.0], font=9, bold_first_col=True)
+para("What happens to every message (respond() in both versions):", space_after=3)
 restart_numbering()
 for t_ in ["NLP pre-processing, entity extraction and intent classification.",
            "If a task is pending (e.g. eligibility waiting for marks), the new facts fill the slot and the task continues.",
@@ -461,7 +454,7 @@ for t_ in ["NLP pre-processing, entity extraction and intent classification.",
 
 # ============================================================== 5
 doc.add_heading("5. Dataset and Test-Case Preparation", 1)
-para("There is no public dataset for a fictional university, so the knowledge and the test cases were prepared for this project:")
+para("There is no public dataset for a made-up university, so we wrote the knowledge and the test questions ourselves:")
 bullet(" 29 frames, 26 production rules, 18 intents with 109 example sentences, and 90 FAQ passages "
        "(75 generated automatically from the frames and 15 free-text passages).", "Knowledge sources:")
 bullet(f" {len(test)} hand-written queries, deliberately different from the intent examples, in 8 categories that test "
@@ -554,37 +547,40 @@ bullet(f" {pct(HO['Answer accuracy'])} for the hybrid chatbot, against "
        f"{pct(summ_ho['NLP + vector retrieval']['Answer accuracy'])} and {pct(summ_ho['Keyword FAQ matching']['Answer accuracy'])}. "
        "The drop from the main test set is the expected optimism of a test set that was also used for debugging; the ranking "
        "of the three approaches is the same.", "Held-out set:")
-bullet(f" mean {lat.mean():.1f} ms per answer on a laptop CPU, with no GPU and no internet.", "Speed:")
+bullet(f" mean {lat.mean():.1f} ms per answer on an ordinary laptop, without a GPU. The browser version feels just as instant.", "Speed:")
 doc.add_heading("8.2 Discussion and individual observations on the outputs", 2)
 obs = [
-    ("Reasoning is what a retrieval bot cannot do. ",
+    ("The rules make the biggest difference. ",
      f"Both alternatives scored {100 * cats['Keyword FAQ matching']['reasoning']:.0f}% on reasoning questions and about "
-     f"{100 * cats['NLP + vector retrieval']['multi_turn']:.0f}% on multi-turn questions. They can return the general eligibility text, "
-     "but not the decision for a specific applicant (\"72% in B.E ECE, so eligible for M.Tech AI\"). Removing the rule engine "
-     f"alone drops the hybrid from {pct(abl['Full hybrid system']['acc'])} to {pct(abl['without rule-based reasoning']['acc'])}, "
-     "the largest single drop."),
-    ("Inheritance keeps the knowledge base small and consistent. ",
-     "Duration, documents and deadlines are stored once per class (UG / PG / Research) and inherited by every programme. "
-     "The trace shows where each value came from, e.g. mba.duration comes from the PGProgram frame."),
-    ("Explanations come for free. ",
-     "Every fired rule produces a sentence (\"[R3] A 5% relaxation applies for the OBC category, so the cut-off becomes 55%\"), "
-     "so a student can see why they are or are not eligible. A statistical chatbot does not give this."),
-    ("Small NLP steps matter. ",
-     f"Spelling correction raised typo accuracy from {100 * abl['without spelling correction']['typo']:.0f}% to "
-     f"{100 * abl['Full hybrid system']['typo']:.0f}%, and normalising B.E / B.Tech / M.Tech / plus two / CGPA was essential for "
-     "correct entity extraction."),
-    ("Dialogue context is necessary for natural conversation. ",
-     f"Without context memory, multi-turn accuracy falls from {100 * abl['Full hybrid system']['multi_turn']:.0f}% to "
-     f"{100 * abl['without dialogue context']['multi_turn']:.0f}%. Users naturally ask \"How long is it?\" or answer a "
-     "clarification with just \"I have 61 percent\"."),
-    ("Structured and unstructured knowledge complement each other, but there is a trade-off. ",
-     f"Without the vector store, free-text FAQ accuracy is 0%; with it, {100 * cats['Hybrid KR + NLP (proposed)']['unstructured_faq']:.0f}% "
-     f"(Recall@3 = {r3:.2f}). On these questions the plain retrieval baselines score higher "
+     f"{100 * cats['NLP + vector retrieval']['multi_turn']:.0f}% on multi-turn questions. They can show the general eligibility "
+     "text, but they cannot say whether this particular student (\"72% in B.E ECE\") is eligible for M.Tech AI. When we "
+     f"switched off only the rule engine, accuracy fell from {pct(abl['Full hybrid system']['acc'])} to "
+     f"{pct(abl['without rule-based reasoning']['acc'])}, the biggest drop of any component."),
+    ("Inheritance kept the knowledge base small. ",
+     "Duration, documents and deadlines are written once in the UG, PG and Research class frames, and every programme "
+     "inherits them. When one of these values changes we edit one place. The trace also shows where a value came from, "
+     "for example that mba.duration comes from the PGProgram frame."),
+    ("Explanations needed no extra work. ",
+     "Each rule that fires writes one sentence, e.g. \"[R3] A 5% relaxation applies for the OBC category, so the cut-off "
+     "becomes 55%\". On the website these sentences appear in the \"How I answered\" panel, so a student can see exactly "
+     "why they are or are not eligible. A purely statistical chatbot cannot give this."),
+    ("Small NLP steps mattered more than we expected. ",
+     f"Spelling correction alone took typo accuracy from {100 * abl['without spelling correction']['typo']:.0f}% to "
+     f"{100 * abl['Full hybrid system']['typo']:.0f}%. Without normalising B.E / B.Tech / M.Tech / plus two / CGPA, most "
+     "entities would not have been found at all."),
+    ("People expect the bot to remember the conversation. ",
+     f"Without the context memory, multi-turn accuracy falls from {100 * abl['Full hybrid system']['multi_turn']:.0f}% to "
+     f"{100 * abl['without dialogue context']['multi_turn']:.0f}%. Students ask \"How long is it?\" or reply to a question "
+     "with just \"I have 61 percent\", and the bot has to understand that."),
+    ("Frames and free-text FAQs work well together, with one trade-off. ",
+     f"Without the vector store the free-text FAQ questions score 0%; with it, "
+     f"{100 * cats['Hybrid KR + NLP (proposed)']['unstructured_faq']:.0f}% (Recall@3 = {r3:.2f}). The plain retrieval "
+     f"chatbots still do better on these "
      f"({100 * cats['NLP + vector retrieval']['unstructured_faq']:.0f}-{100 * cats['Keyword FAQ matching']['unstructured_faq']:.0f}%), "
-     "because the hybrid sometimes sends a question to a confident KB intent (\"Wi-Fi in the hostel\" goes to the hostel frame)."),
-    ("Out-of-scope detection is the weakest part. ",
-     f"The domain gate catches clearly unrelated questions (recall {pct(H['Out-of-scope recall'])}), but questions that share "
-     "domain words (\"share price of Infosys\", \"book a movie ticket\") still get a university answer."),
+     "because our chatbot sometimes trusts a confident KB intent too much (\"Wi-Fi in the hostel\" goes to the hostel frame)."),
+    ("Spotting out-of-scope questions is the weakest part. ",
+     f"The domain gate catches clearly unrelated questions (recall {pct(H['Out-of-scope recall'])}), but questions that "
+     "share words with the domain (\"share price of Infosys\", \"book a movie ticket\") still get a university answer."),
 ]
 restart_numbering()
 for lead, text in obs:
@@ -595,50 +591,59 @@ for t_ in ["Knowledge must be engineered by hand; rules cover only eligibility a
            "English only; the knowledge base is synthetic; the test sets were written by the developer, not collected from real users."]:
     bullet(t_)
 doc.add_heading("8.4 Conclusion", 2)
-para("A hybrid Knowledge Representation + NLP chatbot was designed, implemented and evaluated. Frames with inheritance hold "
-     "the structured university knowledge. Forward-chaining production rules answer personalised eligibility and fee questions "
-     "with step-by-step explanations. A lightweight NLP pipeline turns free-form questions into structured queries, a dialogue "
-     "manager handles follow-ups and missing details, and a vector store answers unstructured FAQs. The system clearly beats "
-     "retrieval-only alternatives, especially on reasoning and multi-turn questions, while staying fast, explainable and offline.")
-para("Future work: replace the TF-IDF embedder with a neural sentence embedding (the Embedder interface already supports this), "
-     "learn intent weights from real chat logs, add backward chaining for \"what do I need to become eligible?\" questions, "
-     "support Tamil and Hindi, and connect the knowledge base to the live admissions database.")
+para("We designed, built and tested a university enquiry chatbot that combines knowledge representation with NLP. Frames "
+     "with inheritance hold the university's facts. Forward-chaining rules answer personal eligibility and fee questions and "
+     "explain each step. A simple NLP pipeline turns a free-form question into intent and entities, the dialogue manager "
+     "handles follow-ups and missing details, and a vector store covers FAQ topics that are not in the frames. Our chatbot "
+     "clearly beats the retrieval-only chatbots, especially on reasoning and multi-turn questions. It stays fast and "
+     "explainable, and as a website it can be demonstrated from any phone or laptop.")
+para("If we continue the project, we would like to: try a neural sentence embedding in place of TF-IDF (the embedder is "
+     "already pluggable); learn the intent weights from real chat logs; add backward chaining for questions like \"what "
+     "do I need to become eligible?\"; support Tamil and Hindi; and read the knowledge base from the real admissions "
+     "database.")
 
 # ============================================================== 9
 doc.add_heading("9. Demonstration of the Working Prototype", 1)
-para("The prototype has two interfaces on top of the same engine. The terminal chatbot is part of the submission; the web "
-     "version is for live demonstration.")
-doc.add_heading("9.1 Terminal chatbot (python chat_cli.py)", 2)
-para("A real session with the terminal chatbot. The bracketed line after each answer shows intent, answer source and "
-     "confidence; /why prints the reasoning trace.")
-code_block(["Greenfield University - Enquiry Chatbot  (type /help for examples, /exit to quit)", ""] + demo_lines, size=8)
-doc.add_heading("9.2 Web demo (streamlit run app_streamlit.py)", 2)
-para("The web demo runs locally at http://localhost:8501. The left panel holds sample questions, the centre shows the "
-     "conversation, and the right panel explains each answer: intent, confidence, answer source, the rules that fired "
-     "and the extracted entities.")
-figure(FIG / "demo_web_1.png", "Figure 8. Web demo: follow-up question resolved from context, then an eligibility decision with the rules that fired.", 16.4)
-figure(FIG / "demo_web_2.png", "Figure 9. Web demo: slot filling (CGPA converted to percentage) and a fee calculation with merit scholarship.", 16.4)
+para(f"The working chatbot is online at {DEMO_URL}. It opens straight away in any browser, on a laptop or a phone, "
+     "with nothing to install.")
+doc.add_heading("9.1 The chat page", 2)
+para("The page has three parts. On the left are sample questions grouped by topic, plus two guided demos that type "
+     "out a short conversation on their own (useful during the presentation). The middle is the conversation. Under every "
+     "answer a small label says which part of the system answered it. On the right, the \"How I answered\" panel shows "
+     "the detected intent with its confidence and the top three intent scores, the rules that fired, the details picked "
+     "out of the question, and the normalised text and key words. Clicking the label under any earlier answer brings "
+     "its explanation back. After each answer the bot also suggests follow-up questions such as \"How long is it?\".")
+figure(FIG / "demo_web_1.png", "Figure 8. Demo 1: a follow-up question (\"How long is it?\") answered from context, then an eligibility decision with the rules that fired.", 16.4)
+figure(FIG / "demo_web_2.png", "Figure 9. Demo 2: the bot asks for the missing details, converts CGPA to a percentage, and then works out a fee with the merit scholarship.", 16.4)
+doc.add_heading("9.2 A sample conversation", 2)
+para("This is one complete conversation with the chatbot. The line after each answer says which part of the system "
+     "produced it.")
+code_block(demo_lines, size=8)
 
 # ============================================================ appendix A
-doc.add_heading("Appendix A. Software Setup: Steps Followed", 1)
-para("All software is free. It was installed for the current Windows user only, without administrator rights:")
+doc.add_heading("Appendix A. How to Use the Solution", 1)
 restart_numbering()
 for lead, t_ in [
-    ("Python 3.12.10: ", "winget install --id Python.Python.3.12 -e --scope user"),
-    ("Visual Studio Code 1.141: ", "winget install --id Microsoft.VisualStudioCode -e --scope user"),
-    ("VS Code extensions: ", "Python (ms-python.python) and Jupyter (ms-toolsai.jupyter), via code --install-extension"),
-    ("Python libraries: ", "python -m pip install numpy pandas scikit-learn matplotlib python-docx jupyter ipykernel nbformat nbconvert streamlit"),
-    ("PATH: ", "the Python and Python\\Scripts folders were added to the user PATH so that python, pip and streamlit work in any terminal")]:
+    ("The chatbot: ", f"open {DEMO_URL} in any browser. Click a sample question or type your own. \"Demo 1\" and "
+                      "\"Demo 2\" in the left panel play a short conversation for the presentation."),
+    ("Test results in the browser: ", "open tests/engine-test.html on the same site. It runs both test sets and shows "
+                                     "the accuracy and every answer."),
+    ("The notebook: ", "open the project folder in VS Code (File > Open Folder), open University_Enquiry_Chatbot.ipynb, "
+                       "select the Python 3.12 kernel (top right) and click Run All. It recomputes every metric and "
+                       "figure in this report."),
+    ("Changing the knowledge: ", "the facts, rules, intents and FAQs live in data/*.json. Both the website and the notebook "
+                                 "read these files, so an edit there changes both.")]:
     numbered(t_, lead)
 
-doc.add_heading("Appendix B. How to Run the Solution", 1)
+doc.add_heading("Appendix B. Software Used", 1)
+para("All the software is free. Nothing needs to be installed to use the chatbot, since it runs in the browser. For the "
+     "notebook we installed, for the Windows user only:")
 restart_numbering()
 for lead, t_ in [
-    ("Open the project: ", "in VS Code choose File > Open Folder and select the university_chatbot folder."),
-    ("Notebook: ", "open University_Enquiry_Chatbot.ipynb, select the Python 3.12 kernel (top-right) and click Run All."),
-    ("Terminal chatbot: ", "open Terminal > New Terminal and run:  python chat_cli.py   (commands: /why, /reset, /help, /exit)"),
-    ("Web demo: ", "in the terminal run:  streamlit run app_streamlit.py   then open http://localhost:8501 (add ?demo=1 for a sample conversation)."),
-    ("Re-run the evaluation: ", "the notebook recomputes every metric and figure from data/test_queries.csv.")]:
+    ("Python 3.12.10 ", "(winget install --id Python.Python.3.12 -e --scope user)"),
+    ("Visual Studio Code ", "with the Python and Jupyter extensions"),
+    ("Python libraries: ", "numpy, pandas, scikit-learn, matplotlib, jupyter and ipykernel (python -m pip install -r requirements.txt)"),
+    ("Hosting: ", "GitHub Pages (Settings > Pages > Deploy from branch: main, folder / (root))")]:
     numbered(t_, lead)
 
 doc.add_heading("References", 1)

@@ -17,10 +17,11 @@ md(r"""
 |---|---|
 | **Team members** | Manikandan (Roll No. 35) · Manoj Kumar (Roll No. 05) · Dinakar (Roll No. 32) |
 | **Technique** | Frame-based knowledge representation (semantic network) + production rules with forward chaining + an NLP pipeline + a vector-store retrieval fallback |
-| **Solution files** | this notebook · `chatbot/` package · `chat_cli.py` (terminal chatbot) · `app_streamlit.py` (web demo) |
+| **Solution files** | this notebook · `chatbot/` package (Python engine) · `index.html` + `web/` (the chatbot website) · `data/` |
+| **Live chatbot** | https://manikandanayyakkannu.github.io/FAI-Mini-Project/ |
 
 **How to run:** open the `university_chatbot` folder in VS Code, choose the Python 3.12 kernel and click **Run All**.
-The terminal chatbot runs with `python chat_cli.py`, and the web demo with `streamlit run app_streamlit.py`.
+The chatbot itself runs in the browser: open the live link above, with nothing to install.
 
 The notebook follows the nine requirements of the assignment:
 1. Problem definition · 2. AI problem formulation · 3. Selection and explanation of the AI technique · 4. Python implementation ·
@@ -238,8 +239,8 @@ for q in ["Is there any ragging in the campus?", "Can I get an education loan?",
 md(r"""
 ## 4. Python Implementation
 
-The implementation is a small, UI-independent Python package. The **same engine** is used by this notebook,
-the terminal chatbot (`chat_cli.py`) and the web demo (`app_streamlit.py`).
+The engine is a small Python package, used by this notebook for all the experiments. The chatbot website runs
+the **same engine** rewritten in JavaScript (`web/js/`, one file per module) and gives identical answers on all 154 test conversations.
 
 ```
 university_chatbot/
@@ -255,8 +256,9 @@ university_chatbot/
 │   ├── baselines.py          alternative approaches used for comparison
 │   └── evaluation.py         metrics and the test harness
 ├── data/  knowledge_base.json · rules.json · intents.json · faq_extra.json · test_queries*.csv
-├── chat_cli.py               terminal chatbot
-└── app_streamlit.py          web demo
+├── index.html                the chatbot website
+├── web/                      website code (JavaScript version of the engine, styles)
+└── tests/engine-test.html    runs the test sets in the browser
 ```
 
 **Processing pipeline for every message** (`UniversityChatbot.respond`):
@@ -567,7 +569,7 @@ for q in conversation:
     print(f"      [intent={r.intent} | source={r.source} | confidence={r.confidence:.2f} | {r.latency_ms:.1f} ms]\n")
 """)
 
-md("**Explanation trace of the eligibility answer above** (what `/why` shows in the terminal chatbot):")
+md("**Explanation trace of the eligibility answer above** (the same steps the website shows in its "How I answered" panel):")
 code(r"""
 s2 = demo_bot.new_session()
 demo_bot.respond("Am I eligible for M.Tech AI?", s2)
@@ -576,27 +578,12 @@ print("\n".join(r.trace))
 """)
 
 md(r"""
-### 9.2 Interactive terminal chatbot
-Set `INTERACTIVE = True` and run the cell to chat with the bot inside the notebook (VS Code shows an input box at the top of the window).
-Type `/why` to see how the last answer was produced, `/reset` for a new conversation and `/exit` to stop.
-The same chatbot runs in a terminal with **`python chat_cli.py`**.
-""")
-code(r"""
-INTERACTIVE = False
-if INTERACTIVE:
-    from chat_cli import run_chat
-    run_chat(UniversityChatbot())
-else:
-    print("Set INTERACTIVE = True to chat here, or run:  python chat_cli.py")
-""")
+### 9.2 The chatbot website
+The working chatbot is online at **https://manikandanayyakkannu.github.io/FAI-Mini-Project/**. It runs completely in the browser, on a laptop or a phone, with nothing to install.
+Next to each answer it shows the intent, the details picked from the question, the answer source and the rules that fired.
+The *Demo 1* and *Demo 2* buttons (or `?demo=1` / `?demo=2` at the end of the link) play a short sample conversation.
 
-md(r"""
-### 9.3 Web demo
-For a presentation-friendly interface run **`streamlit run app_streamlit.py`** in the VS Code terminal. It opens a chat window in the browser
-at `http://localhost:8501` and shows the intent, entities, answer source and the rules that fired next to each answer.
-Opening `http://localhost:8501/?demo=1` pre-loads a sample conversation.
-
-![web demo](docs/figures/demo_web_1.png)
+![chatbot website](docs/figures/demo_web_1.png)
 """)
 
 nb["cells"] = cells

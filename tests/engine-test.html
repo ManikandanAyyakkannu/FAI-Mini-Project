@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbot Test Run</title>
+<style>
+  body { font: 14px/1.5 "Segoe UI", system-ui, sans-serif; margin: 24px; color: #1d2b24; background: #f6f8f7; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .summary { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .card { background: #fff; border: 1px solid #dde5e0; border-radius: 8px; padding: 10px 16px; min-width: 160px; }
+  .card b { display: block; font-size: 22px; color: #1f6f4a; }
+  table { border-collapse: collapse; width: 100%; background: #fff; font-size: 13px; }
+  th, td { border: 1px solid #dde5e0; padding: 4px 8px; text-align: left; vertical-align: top; }
+  th { background: #1f6f4a; color: #fff; position: sticky; top: 0; }
+  tr.bad td { background: #fdecec; }
+  .muted { color: #66756d; }
+</style>
+</head>
+<body>
+<h1>Chatbot test run</h1>
+<p class="muted">Runs every question in <code>data/test_queries.csv</code> and <code>data/test_queries_holdout.csv</code> through the chatbot and checks the answer.
+Questions with the same conversation id are asked in one conversation.</p>
+<div id="summary" class="summary">Running…</div>
+<table>
+  <thead><tr><th>ID</th><th>Question</th><th>Expected</th><th>Chatbot answered</th><th>Source</th><th>OK</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<script type="module">
+import { loadChatbot, newSession } from "../web/js/chatbot.js";
+
+// small CSV reader (handles quoted fields with commas)
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') quoted = false;
+      else field += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  if (field || row.length) { row.push(field); rows.push(row); }
+  const [head, ...body] = rows;
+  return body.map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
+}
+
+const bot = await loadChatbot("../data/");
+const results = [];
+for (const file of ["test_queries.csv", "test_queries_holdout.csv"]) {
+  const tests = parseCsv(await (await fetch("../data/" + file)).text());
+  const sessions = {};
+  for (const t of tests) {
+    const session = t.conv_id ? (sessions[t.conv_id] ||= newSession()) : newSession();
+    const r = bot.respond(t.query, session);
+    const accepted = t.expected_key.split("|");
+    results.push({ set: file, id: t.id, query: t.query, expected: t.expected_key, key: r.answerKey,
+                   intent: r.intent, source: r.source, conf: r.confidence, text: r.text, ok: accepted.includes(r.answerKey) });
+  }
+}
+
+const sets = { "test_queries.csv": "Main test set", "test_queries_holdout.csv": "Held-out set" };
+const summary = document.getElementById("summary");
+summary.innerHTML = "";
+for (const [file, label] of Object.entries(sets)) {
+  const rs = results.filter(r => r.set === file);
+  const ok = rs.filter(r => r.ok).length;
+  summary.insertAdjacentHTML("beforeend",
+    `<div class="card">${label}<b>${(100 * ok / rs.length).toFixed(1)}%</b><span class="muted">${ok} of ${rs.length} correct</span></div>`);
+}
+const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+document.getElementById("rows").innerHTML = results.map(r =>
+  `<tr class="${r.ok ? "" : "bad"}"><td>${r.id}</td><td>${esc(r.query)}</td><td>${esc(r.expected)}</td>` +
+  `<td>${esc(r.key)}</td><td>${r.source}</td><td>${r.ok ? "✔" : "✘"}</td></tr>`).join("");
+
+document.body.dataset.done = "1";
+</script>
+</body>
+</html>
